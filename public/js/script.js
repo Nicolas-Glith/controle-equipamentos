@@ -2,21 +2,17 @@
 // SISTEMA DE CONTROLE DE EQUIPAMENTOS
 // VERSÃO POSTGRESQL
 // ==========================================
-
 const API_BASE = ''; // Mesma origem
-
 const TIPOS_EQUIPAMENTO = {
   1: 'Chromebook',
   2: 'Positivo',
   3: 'Tablet'
 };
-
 const PERIODOS = {
   manha: 'Manhã',
   tarde: 'Tarde',
   noite: 'Noite'
 };
-
 const AULAS = {
   1: '1ª Aula', 2: '2ª Aula', 3: '3ª Aula',
   4: '4ª Aula', 5: '5ª Aula', 6: '6ª Aula'
@@ -79,10 +75,24 @@ function inicializarEventos() {
   document.getElementById('senhaAdmin')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') tentarLogin();
   });
+
+  // 🎧 Ouvinte para Devolução Rápida (Seguro contra apóstrofos e aspas)
+  const listaAtivos = document.getElementById('listaAtivos');
+  if (listaAtivos) {
+    listaAtivos.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-devolver-tudo');
+      if (btn) {
+        const tipo = btn.dataset.tipo;
+        const qtd = btn.dataset.qtd;
+        const resp = btn.dataset.resp;
+        devolucaoRapida(tipo, qtd, resp);
+      }
+    });
+  }
 }
 
 // ==========================================
-// CHAMADAS À API
+// CHAMADAS À API (SEM QUEBRAS DE LINHA)
 // ==========================================
 async function apiGet(endpoint) {
   const res = await fetch(`${API_BASE}${endpoint}`);
@@ -124,15 +134,12 @@ async function carregarInventario() {
 }
 
 function atualizarHintDisponivel(tipo) {
-  // Busca valor atual do DOM (já carregado via API)
   const idMap = { '1': 'dispChromebook', '2': 'dispPositivo', '3': 'dispTablet' };
   const dispEl = document.getElementById(idMap[tipo]);
   const totalMap = { '1': 22, '2': 34, '3': 40 };
-  
   if (dispEl) {
     const disp = parseInt(dispEl.textContent) || 0;
-    document.getElementById('hintDisp').textContent = 
-      `Disponível: ${disp} de ${totalMap[tipo]} ${TIPOS_EQUIPAMENTO[tipo]}`;
+    document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${totalMap[tipo]} ${TIPOS_EQUIPAMENTO[tipo]}`;
     document.getElementById('quantidade').max = disp;
   }
 }
@@ -160,18 +167,12 @@ function selecionarAula(btn) {
 }
 
 // ==========================================
-// REGISTRAR RETIRADA / DEVOLUÇÃO (CORRIGIDO)
+// REGISTRAR RETIRADA / DEVOLUÇÃO
 // ==========================================
-// Função centralizada de atualização
 async function atualizarTelaCompleta() {
   try {
-    // 1. Primeiro atualiza o inventário (números)
     await carregarInventario();
-    
-    // 2. Depois atualiza as retiradas ativas (lista)
     await carregarRetiradasAtivas();
-    
-    // 3. Se admin, atualiza histórico
     if (isAdmin) await carregarRegistros();
   } catch (err) {
     console.error('Erro ao atualizar tela:', err);
@@ -201,13 +202,9 @@ async function registrarRetirada() {
       periodo: PERIODOS[periodo],
       aula: AULAS[aula]
     });
-
     limparFormulario();
     mostrarToast(`Retirada registrada: ${quantidade}x ${TIPOS_EQUIPAMENTO[tipo]}`, 'success');
-    
-    // 🔥 ATUALIZAÇÃO FORÇADA E SEQUENCIAL
     await atualizarTelaCompleta();
-    
   } catch (err) {
     mostrarToast(err.message, 'error');
   }
@@ -234,19 +231,14 @@ async function registrarDevolucao() {
       periodo: 'Devolução',
       aula: 'N/A'
     });
-
     limparFormulario();
     mostrarToast(`Devolução registrada: ${quantidade}x ${TIPOS_EQUIPAMENTO[tipo]}`, 'success');
-    
-    // 🔥 ATUALIZAÇÃO FORÇADA E SEQUENCIAL
     await atualizarTelaCompleta();
-    
   } catch (err) {
     mostrarToast(err.message, 'error');
   }
 }
 
-// Devolução rápida (usada pelo botão "Devolver Tudo" das retiradas ativas)
 async function devolucaoRapida(tipo, quantidade, responsavel) {
   try {
     await apiPost('/api/registros', {
@@ -257,7 +249,6 @@ async function devolucaoRapida(tipo, quantidade, responsavel) {
       periodo: 'Devolução',
       aula: 'N/A'
     });
-
     mostrarToast(`Devolução registrada: ${quantidade}x ${TIPOS_EQUIPAMENTO[tipo]}`, 'success');
     await atualizarTelaCompleta();
   } catch (err) {
@@ -267,17 +258,15 @@ async function devolucaoRapida(tipo, quantidade, responsavel) {
 
 async function carregarRetiradasAtivas() {
   const container = document.getElementById('listaAtivos');
-  
   try {
-    // Adiciona timestamp para evitar cache do navegador
     const timestamp = new Date().getTime();
     const ativos = await apiGet(`/api/registros/ativos?_=${timestamp}`);
     
     if (!ativos || ativos.length === 0) {
-      container.innerHTML = '<div class="empty-state">✅ Nenhuma retirada ativa no momento.</div>';
-      return;
+       container.innerHTML = '<div class="empty-state">✅ Nenhuma retirada ativa no momento.</div>';
+       return;
     }
-
+    
     container.innerHTML = ativos.map(item => `
       <div class="registro-item retirada">
         <div class="registro-header">
@@ -290,9 +279,11 @@ async function carregarRetiradasAtivas() {
           <span><strong>Período:</strong> ${item.periodo}</span>
           <span><strong>Aula:</strong> ${item.aula}</span>
         </div>
-        <button class="btn btn-devolucao" 
+        <button class="btn btn-devolucao btn-devolver-tudo" 
                 style="margin-top:8px;min-width:auto;flex:none;padding:6px 14px;font-size:0.8rem;"
-                onclick="devolucaoRapida('${item.tipo_equipamento}', ${item.quantidade}, '${item.responsavel}')">
+                data-tipo="${item.tipo_equipamento}" 
+                data-qtd="${item.quantidade}" 
+                data-resp="${item.responsavel.replace(/"/g, '&quot;')}">
           📥 Devolver Tudo
         </button>
       </div>
@@ -308,20 +299,18 @@ async function carregarRetiradasAtivas() {
 // ==========================================
 async function carregarRegistros() {
   if (!isAdmin) return;
-
   try {
     const params = new URLSearchParams();
     if (filtroAtual !== 'todos') params.set('filtro', filtroAtual);
     if (termoBusca) params.set('busca', termoBusca);
-
     const registros = await apiGet(`/api/registros?${params.toString()}`);
+    
     const container = document.getElementById('listaHistorico');
-
     if (registros.length === 0) {
       container.innerHTML = '<div class="empty-state">Nenhum registro encontrado.</div>';
       return;
     }
-
+    
     container.innerHTML = registros.map(item => `
       <div class="registro-item ${item.tipo_registro}">
         <div class="registro-header">
@@ -377,11 +366,7 @@ function imprimirHistorico() {
   const panel = document.getElementById('panelHistorico');
   const header = document.createElement('div');
   header.className = 'print-header';
-  header.innerHTML = `
-    <h1>E.E. "Luiz Bianconi"</h1>
-    <p><strong>Relatório de Controle de Equipamentos</strong></p>
-    <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
-  `;
+  header.innerHTML = `<h1>E.E. "Luiz Bianconi"</h1> <p><strong>Relatório de Controle de Equipamentos</strong></p> <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>`;
   panel.insertBefore(header, panel.firstChild);
   window.print();
   setTimeout(() => header.remove(), 500);
