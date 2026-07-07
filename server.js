@@ -9,14 +9,23 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Conexão PostgreSQL
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
+// Conexão PostgreSQL (Híbrida: Local ou Nuvem)
+const pool = new Pool(
+  process.env.DATABASE_URL
+    ? {
+        // Se estiver na Vercel/Supabase (Nuvem)
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      }
+    : {
+        // Se estiver no seu PC (Local)
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+      }
+);
 
 // ========== ROTAS DE INVENTÁRIO ==========
 app.post('/api/registros', async (req, res) => {
