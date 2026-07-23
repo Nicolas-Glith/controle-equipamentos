@@ -21,11 +21,13 @@ const AULAS = {
 let filtroAtual = 'todos';
 let termoBusca = '';
 let isAdmin = false;
+let aulasSelecionadas = new Set();
 
 // ==========================================
 // INICIALIZAÇÃO
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+  aplicarTema();
   inicializarEventos();
   verificarSessao();
   carregarInventario();
@@ -136,7 +138,7 @@ async function carregarInventario() {
 function atualizarHintDisponivel(tipo) {
   const idMap = { '1': 'dispChromebook', '2': 'dispPositivo', '3': 'dispTablet' };
   const dispEl = document.getElementById(idMap[tipo]);
-  const totalMap = { '1': 22, '2': 34, '3': 40 };
+  const totalMap = { '1': 22, '2': 36, '3': 44 };
   if (dispEl) {
     const disp = parseInt(dispEl.textContent) || 0;
     document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${totalMap[tipo]} ${TIPOS_EQUIPAMENTO[tipo]}`;
@@ -161,9 +163,15 @@ function selecionarPeriodo(btn) {
 }
 
 function selecionarAula(btn) {
-  document.querySelectorAll('.aula-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('aula').value = btn.dataset.aula;
+  const aula = btn.dataset.aula;
+  if (aulasSelecionadas.has(aula)) {
+    aulasSelecionadas.delete(aula);
+    btn.classList.remove('selected');
+  } else {
+    aulasSelecionadas.add(aula);
+    btn.classList.add('selected');
+  }
+  document.getElementById('aula').value = Array.from(aulasSelecionadas).join(',');
 }
 
 // ==========================================
@@ -184,10 +192,10 @@ async function registrarRetirada() {
   const quantidade = parseInt(document.getElementById('quantidade').value);
   const responsavel = document.getElementById('responsavel').value.trim();
   const periodo = document.getElementById('periodo').value;
-  const aula = document.getElementById('aula').value;
+  const aulas = Array.from(aulasSelecionadas).map(a => AULAS[a]).join(', ');
 
-  if (!tipo || !quantidade || !responsavel || !periodo || !aula) {
-    return mostrarToast('Preencha todos os campos!', 'error');
+  if (!tipo || !quantidade || !responsavel || !periodo || aulasSelecionadas.size === 0) {
+    return mostrarToast('Preencha todos os campos e selecione pelo menos uma aula!', 'error');
   }
   if (/[0-9]/.test(responsavel) || responsavel.length < 3) {
     return mostrarToast('Nome inválido! Apenas letras, mínimo 3 caracteres.', 'error');
@@ -200,7 +208,7 @@ async function registrarRetirada() {
       quantidade,
       responsavel,
       periodo: PERIODOS[periodo],
-      aula: AULAS[aula]
+      aula: aulas
     });
     limparFormulario();
     mostrarToast(`Retirada registrada: ${quantidade}x ${TIPOS_EQUIPAMENTO[tipo]}`, 'success');
@@ -429,6 +437,7 @@ function formatarDataISO(isoString) {
 
 function limparFormulario() {
   document.querySelectorAll('.tipo-btn,.periodo-btn,.aula-btn').forEach(b => b.classList.remove('selected'));
+  aulasSelecionadas.clear();
   ['tipoEquipamento','quantidade','responsavel','periodo','aula'].forEach(id => {
     document.getElementById(id).value = '';
   });
@@ -442,4 +451,29 @@ function mostrarToast(msg, tipo = 'info') {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3000);
+}
+
+// ==========================================
+// TEMA (DARK/LIGHT MODE)
+// ==========================================
+function aplicarTema() {
+  const tema = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', tema);
+  atualizarIconeTema(tema);
+}
+
+function toggleTheme() {
+  const atual = document.documentElement.getAttribute('data-theme');
+  const novo = atual === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', novo);
+  localStorage.setItem('theme', novo);
+  atualizarIconeTema(novo);
+}
+
+function atualizarIconeTema(tema) {
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.textContent = tema === 'dark' ? '🌙' : '☀️';
+    btn.title = tema === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro';
+  }
 }

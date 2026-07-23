@@ -1,3 +1,66 @@
+/* ==========================================
+   VARIÁVEIS DE TEMA - MODO CLARO (PADRÃO)
+   ========================================== */
+:root {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-input: #f5f5f5;
+  --bg-button: #f0f0f0;
+  --bg-item: #f8f9fa;
+  --border-color: #e0e0e0;
+  --border-accent: #1976d2;
+  --text-primary: #212121;
+  --text-secondary: #616161;
+  --text-muted: #9e9e9e;
+  --accent: #1976d2;
+  --accent-light: rgba(25, 118, 210, 0.1);
+  --success: #2e7d32;
+  --success-light: rgba(46, 125, 50, 0.1);
+  --warning: #e65100;
+  --warning-light: rgba(230, 81, 0, 0.1);
+  --danger: #c62828;
+  --danger-light: rgba(198, 40, 40, 0.1);
+  --gold: #f9a825;
+  --gold-light: rgba(249, 168, 37, 0.15);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --scrollbar-thumb: #bdbdbd;
+  --scrollbar-track: #f0f0f0;
+}
+
+/* ==========================================
+   MODO ESCURO
+   ========================================== */
+[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-panel: rgba(255, 255, 255, 0.05);
+  --bg-input: rgba(0, 0, 0, 0.3);
+  --bg-button: rgba(0, 0, 0, 0.3);
+  --bg-item: rgba(0, 0, 0, 0.4);
+  --border-color: rgba(100, 255, 218, 0.1);
+  --border-accent: #64ffda;
+  --text-primary: #e0e0e0;
+  --text-secondary: #8892b0;
+  --text-muted: #8892b0;
+  --accent: #64ffda;
+  --accent-light: rgba(100, 255, 218, 0.1);
+  --success: #00b894;
+  --success-light: rgba(0, 184, 148, 0.2);
+  --warning: #ff6b35;
+  --warning-light: rgba(255, 107, 53, 0.2);
+  --danger: #ff4757;
+  --danger-light: rgba(255, 71, 87, 0.2);
+  --gold: #ffd700;
+  --gold-light: rgba(255, 215, 0, 0.15);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb: rgba(100, 255, 218, 0.3);
+  --scrollbar-track: rgba(0, 0, 0, 0.2);
+}
+
+/* ==========================================
+   RESET & BASE
+   ========================================== */
 * {
   margin: 0;
   padding: 0;
@@ -6,10 +69,11 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: var(--bg-primary);
   min-height: 100vh;
-  color: #e0e0e0;
+  color: var(--text-primary);
   padding: 12px;
+  transition: background 0.3s, color 0.3s;
 }
 
 .container {
@@ -17,26 +81,50 @@ body {
   margin: 0 auto;
 }
 
+/* ==========================================
+   HEADER
+   ========================================== */
 header {
   text-align: center;
   margin-bottom: 15px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-panel);
   border-radius: 10px;
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 header h1 {
   font-size: 1.6rem;
-  color: #64ffda;
+  color: var(--accent);
   margin-bottom: 3px;
 }
 
 .subtitle {
-  color: #8892b0;
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
+/* Botão Toggle Tema */
+#themeToggle {
+  background: var(--bg-button);
+  border: 2px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+#themeToggle:hover {
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* ==========================================
+   ADMIN BAR
+   ========================================== */
 .admin-bar {
   margin-top: 10px;
   display: flex;
@@ -46,7 +134,7 @@ header h1 {
 }
 
 .badge-admin {
-  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  background: linear-gradient(135deg, var(--gold), #ffaa00);
   color: #1a1a2e;
   padding: 4px 12px;
   border-radius: 20px;
@@ -55,9 +143,9 @@ header h1 {
 }
 
 .btn-logout {
-  background: rgba(255, 71, 87, 0.2);
-  color: #ff4757;
-  border: 1px solid #ff4757;
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
   padding: 4px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -66,10 +154,12 @@ header h1 {
 }
 
 .btn-logout:hover {
-  background: rgba(255, 71, 87, 0.4);
+  opacity: 0.8;
 }
 
-/* Modal Login */
+/* ==========================================
+   MODAL LOGIN
+   ========================================== */
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -88,8 +178,8 @@ header h1 {
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #16213e, #0f3460);
-  border: 2px solid #64ffda;
+  background: var(--bg-secondary);
+  border: 2px solid var(--accent);
   border-radius: 12px;
   padding: 30px;
   max-width: 400px;
@@ -98,22 +188,22 @@ header h1 {
 }
 
 .modal-content h2 {
-  color: #64ffda;
+  color: var(--accent);
   margin-bottom: 15px;
 }
 
 .modal-content p {
-  color: #8892b0;
+  color: var(--text-secondary);
   margin-bottom: 20px;
 }
 
 .modal-content input {
   width: 100%;
   padding: 10px 14px;
-  border: 2px solid rgba(100, 255, 218, 0.3);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #e0e0e0;
+  background: var(--bg-input);
+  color: var(--text-primary);
   font-size: 1rem;
   margin-bottom: 20px;
   text-align: center;
@@ -121,7 +211,7 @@ header h1 {
 
 .modal-content input:focus {
   outline: none;
-  border-color: #64ffda;
+  border-color: var(--accent);
 }
 
 .modal-actions {
@@ -135,23 +225,9 @@ header h1 {
   font-size: 0.85rem;
 }
 
-.btn-cancelar {
-  background: rgba(255, 71, 87, 0.2);
-  color: #ff4757;
-  border: 1px solid #ff4757;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.btn-entrar {
-  background: linear-gradient(135deg, #00b894, #00cec9);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-/* GRID PRINCIPAL - Layout em tela única */
+/* ==========================================
+   GRID PRINCIPAL
+   ========================================== */
 .grid-principal {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -159,9 +235,11 @@ header h1 {
   margin-bottom: 15px;
 }
 
-/* Inventário */
+/* ==========================================
+   INVENTÁRIO
+   ========================================== */
 .panel-inventario {
-  border: 2px solid rgba(100, 255, 218, 0.3);
+  border: 2px solid var(--border-color);
   height: fit-content;
 }
 
@@ -172,7 +250,7 @@ header h1 {
 }
 
 .inventario-item {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--bg-item);
   border-radius: 8px;
   padding: 10px;
   text-align: center;
@@ -200,7 +278,7 @@ header h1 {
   font-weight: bold;
   font-size: 0.75rem;
   margin-bottom: 4px;
-  color: #ccd6f6;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -211,32 +289,35 @@ header h1 {
 }
 
 .inv-disp {
-  color: #64ffda;
+  color: var(--accent);
 }
 
 .inv-sep {
-  color: #8892b0;
+  color: var(--text-muted);
 }
 
 .inv-total {
-  color: #8892b0;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
+/* ==========================================
+   PANELS
+   ========================================== */
 .panel {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(100, 255, 218, 0.1);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 15px;
   margin-bottom: 15px;
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
 }
 
 .panel h2 {
-  color: #64ffda;
+  color: var(--accent);
   margin-bottom: 12px;
   font-size: 1.1rem;
-  border-bottom: 1px solid rgba(100, 255, 218, 0.2);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 6px;
 }
 
@@ -262,9 +343,12 @@ header h1 {
 }
 
 .panel-admin {
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--gold-light);
 }
 
+/* ==========================================
+   FORMULÁRIO
+   ========================================== */
 .form-group {
   margin-bottom: 12px;
 }
@@ -281,7 +365,7 @@ header h1 {
 .form-group label {
   display: block;
   margin-bottom: 5px;
-  color: #ccd6f6;
+  color: var(--text-primary);
   font-weight: 500;
   font-size: 0.9rem;
 }
@@ -291,30 +375,33 @@ header h1 {
 .form-group input[type="password"] {
   width: 100%;
   padding: 8px 12px;
-  border: 2px solid rgba(100, 255, 218, 0.2);
+  border: 2px solid var(--border-color);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #e0e0e0;
+  background: var(--bg-input);
+  color: var(--text-primary);
   font-size: 0.95rem;
   transition: border-color 0.3s;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #64ffda;
+  border-color: var(--accent);
 }
 
 .form-group input.invalid {
-  border-color: #ff4757;
+  border-color: var(--danger);
 }
 
 .hint-disp {
   display: block;
   margin-top: 3px;
-  color: #64ffda;
+  color: var(--accent);
   font-size: 0.8rem;
 }
 
+/* ==========================================
+   SELECTORS (Tipo, Período, Aula)
+   ========================================== */
 .tipo-selector,
 .periodo-selector,
 .aula-selector {
@@ -329,10 +416,10 @@ header h1 {
   flex: 1;
   min-width: 90px;
   padding: 8px 10px;
-  border: 2px solid rgba(100, 255, 218, 0.3);
+  border: 2px solid var(--border-color);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #ccd6f6;
+  background: var(--bg-button);
+  color: var(--text-primary);
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s;
@@ -341,16 +428,16 @@ header h1 {
 .tipo-btn:hover,
 .periodo-btn:hover,
 .aula-btn:hover {
-  background: rgba(100, 255, 218, 0.1);
-  border-color: #64ffda;
+  border-color: var(--accent);
+  background: var(--accent-light);
 }
 
 .tipo-btn.selected,
 .periodo-btn.selected,
 .aula-btn.selected {
-  background: rgba(100, 255, 218, 0.2);
-  border-color: #64ffda;
-  color: #64ffda;
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
   font-weight: bold;
 }
 
@@ -359,6 +446,9 @@ header h1 {
   flex: 0 1 calc(16.666% - 6px);
 }
 
+/* ==========================================
+   BOTÕES DE AÇÃO
+   ========================================== */
 .actions {
   display: flex;
   gap: 10px;
@@ -403,7 +493,7 @@ header h1 {
 }
 
 .btn-admin {
-  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  background: linear-gradient(135deg, var(--gold), #ffaa00);
   color: #1a1a2e;
 }
 
@@ -425,10 +515,26 @@ header h1 {
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
+.btn-cancelar {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-entrar {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
 .btn-limpar {
-  background: rgba(255, 71, 87, 0.2);
-  color: #ff4757;
-  border: 1px solid #ff4757;
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger);
   width: auto;
   min-width: 150px;
   margin-top: 15px;
@@ -437,10 +543,12 @@ header h1 {
 }
 
 .btn-limpar:hover {
-  background: rgba(255, 71, 87, 0.4);
+  opacity: 0.8;
 }
 
-/* Barra de Pesquisa */
+/* ==========================================
+   BARRA DE PESQUISA
+   ========================================== */
 .search-bar {
   display: flex;
   gap: 8px;
@@ -452,16 +560,16 @@ header h1 {
   flex: 1;
   padding: 10px 14px;
   padding-right: 40px;
-  border: 2px solid rgba(100, 255, 218, 0.3);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #e0e0e0;
+  background: var(--bg-input);
+  color: var(--text-primary);
   font-size: 0.95rem;
 }
 
 .search-bar input:focus {
   outline: none;
-  border-color: #64ffda;
+  border-color: var(--accent);
 }
 
 .btn-limpar-busca {
@@ -471,7 +579,7 @@ header h1 {
   transform: translateY(-50%);
   background: transparent;
   border: none;
-  color: #8892b0;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 1.2rem;
   padding: 4px 8px;
@@ -479,10 +587,13 @@ header h1 {
 }
 
 .btn-limpar-busca:hover {
-  color: #ff4757;
-  background: rgba(255, 71, 87, 0.2);
+  color: var(--danger);
+  background: var(--danger-light);
 }
 
+/* ==========================================
+   FILTROS
+   ========================================== */
 .filtros {
   display: flex;
   gap: 6px;
@@ -492,34 +603,37 @@ header h1 {
 
 .filtro-btn {
   padding: 6px 12px;
-  border: 1px solid rgba(100, 255, 218, 0.3);
+  border: 1px solid var(--border-color);
   border-radius: 20px;
   background: transparent;
-  color: #8892b0;
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.8rem;
   transition: all 0.3s;
 }
 
 .filtro-btn:hover {
-  border-color: #64ffda;
-  color: #64ffda;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .filtro-btn.active {
-  background: rgba(100, 255, 218, 0.2);
-  border-color: #64ffda;
-  color: #64ffda;
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
+/* ==========================================
+   LISTA DE REGISTROS
+   ========================================== */
 .registros-lista {
   max-height: 350px;
   overflow-y: auto;
 }
 
 .registro-item {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(100, 255, 218, 0.1);
+  background: var(--bg-item);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 8px;
@@ -527,15 +641,15 @@ header h1 {
 }
 
 .registro-item:hover {
-  border-color: rgba(100, 255, 218, 0.3);
+  border-color: var(--accent);
 }
 
 .registro-item.retirada {
-  border-left: 4px solid #ff6b35;
+  border-left: 4px solid var(--warning);
 }
 
 .registro-item.devolucao {
-  border-left: 4px solid #00b894;
+  border-left: 4px solid var(--success);
 }
 
 .registro-header {
@@ -556,17 +670,17 @@ header h1 {
 }
 
 .registro-tipo.retirada {
-  background: rgba(255, 107, 53, 0.2);
-  color: #ff6b35;
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .registro-tipo.devolucao {
-  background: rgba(0, 184, 148, 0.2);
-  color: #00b894;
+  background: var(--success-light);
+  color: var(--success);
 }
 
 .registro-data {
-  color: #8892b0;
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 
@@ -578,28 +692,33 @@ header h1 {
 
 .registro-info span {
   font-size: 0.85rem;
-  color: #ccd6f6;
+  color: var(--text-primary);
 }
 
 .registro-info strong {
-  color: #64ffda;
+  color: var(--accent);
 }
 
 .empty-state {
   text-align: center;
   padding: 20px;
-  color: #8892b0;
+  color: var(--text-muted);
   font-style: italic;
 }
 
+/* ==========================================
+   FOOTER
+   ========================================== */
 footer {
   text-align: center;
   padding: 12px;
-  color: #8892b0;
+  color: var(--text-muted);
   font-size: 0.8rem;
 }
 
-/* Toast Notification */
+/* ==========================================
+   TOAST NOTIFICATION
+   ========================================== */
 .toast {
   position: fixed;
   bottom: 20px;
@@ -635,23 +754,25 @@ footer {
   to { opacity: 0; }
 }
 
-/* Scrollbar */
+/* ==========================================
+   SCROLLBAR
+   ========================================== */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--scrollbar-track);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 255, 218, 0.3);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 255, 218, 0.5);
+  opacity: 0.7;
 }
 
 /* ==========================================
@@ -671,7 +792,7 @@ footer {
   header, .panel-registro, .panel-inventario,
   #panelAtivos, #panelLoginAdmin, footer,
   .search-bar, .filtros, .btn-limpar, .admin-actions,
-  .admin-bar, .modal-overlay {
+  .admin-bar, .modal-overlay, #themeToggle {
     display: none !important;
   }
   
@@ -739,7 +860,9 @@ footer {
   display: none;
 }
 
-/* Responsivo */
+/* ==========================================
+   RESPONSIVO
+   ========================================== */
 @media (max-width: 800px) {
   .grid-principal {
     grid-template-columns: 1fr;
@@ -779,3 +902,5 @@ footer {
     font-size: 1.3rem;
   }
 }
+
+

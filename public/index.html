@@ -24,6 +24,7 @@
     <header>
       <h1>📋 Controle de Equipamentos</h1>
       <p class="subtitle">E.E. "Luiz Bianconi"</p>
+      <button id="themeToggle" onclick="toggleTheme()" title="Alternar tema">☀️</button>
       <div class="admin-bar" id="adminBar" style="display:none;">
         <span class="badge-admin">👑 Modo Administrador</span>
         <button class="btn-logout" onclick="logout()">Sair</button>
@@ -48,17 +49,17 @@
             <div class="inventario-item positivo">
               <div class="inv-nome">Positivo</div>
               <div class="inv-numeros">
-                <span class="inv-disp" id="dispPositivo">34</span>
+                <span class="inv-disp" id="dispPositivo">36</span>
                 <span class="inv-sep">/</span>
-                <span class="inv-total">34</span>
+                <span class="inv-total">36</span>
               </div>
             </div>
             <div class="inventario-item tablet">
               <div class="inv-nome">Tablet</div>
               <div class="inv-numeros">
-                <span class="inv-disp" id="dispTablet">40</span>
+                <span class="inv-disp" id="dispTablet">44</span>
                 <span class="inv-sep">/</span>
-                <span class="inv-total">40</span>
+                <span class="inv-total">44</span>
               </div>
             </div>
           </div>
@@ -101,7 +102,7 @@
           </div>
 
           <div class="form-group">
-            <label>Aula:</label>
+            <label>Aulas (pode selecionar mais de uma):</label>
             <div class="aula-selector">
               <button class="aula-btn" data-aula="1">1ª</button>
               <button class="aula-btn" data-aula="2">2ª</button>
@@ -164,6 +165,8 @@
         <p>Apenas administradores podem visualizar o histórico completo.</p>
         <button class="btn btn-admin" onclick="abrirModalLogin()">🔑 Acessar como Administrador</button>
       </section>
+
+
     </main>
 
     <footer>

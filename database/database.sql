@@ -9,8 +9,8 @@ CREATE TABLE inventario (
 -- Inserção inicial do inventário
 INSERT INTO inventario (tipo_codigo, nome, quantidade_total) VALUES
 (1, 'Chromebook', 22),
-(2, 'Positivo', 34),
-(3, 'Tablet', 40);
+(2, 'Positivo', 36),
+(3, 'Tablet', 44);
 
 -- Tabela de Registros (Retiradas e Devoluções)
 CREATE TABLE registros (
@@ -20,7 +20,7 @@ CREATE TABLE registros (
     quantidade INTEGER NOT NULL CHECK (quantidade > 0),
     responsavel VARCHAR(200) NOT NULL,
     periodo VARCHAR(20) NOT NULL,
-    aula VARCHAR(20) NOT NULL,
+    aula VARCHAR(100) NOT NULL,
     data_hora TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     observacao TEXT
 );
