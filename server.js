@@ -130,24 +130,31 @@ app.get('/api/inventario', async (req, res) => {
   }
 });
 
+// ==========================================
+// CORREÇÃO: agrupar também por responsável, para
+// não mesclar retiradas de professores diferentes
+// do mesmo tipo de equipamento em uma única linha.
+// ==========================================
 app.get('/api/registros/ativos', async (req, res) => {
   try {
     const result = await pool.query(`
       WITH saldo AS (
-        SELECT tipo_equipamento,
+        SELECT tipo_equipamento, responsavel,
                SUM(CASE WHEN tipo_registro = 'retirada' THEN quantidade ELSE 0 END) -
                SUM(CASE WHEN tipo_registro = 'devolucao' THEN quantidade ELSE 0 END) AS pendente
         FROM registros
-        GROUP BY tipo_equipamento
+        GROUP BY tipo_equipamento, responsavel
       )
       SELECT s.tipo_equipamento, i.nome AS tipo_nome, s.pendente AS quantidade,
-             r.responsavel, r.periodo, r.aula, r.data_hora
+             s.responsavel, r.periodo, r.aula, r.data_hora
       FROM saldo s
       JOIN inventario i ON s.tipo_equipamento = i.tipo_codigo
       JOIN LATERAL (
-        SELECT responsavel, periodo, aula, data_hora
+        SELECT periodo, aula, data_hora
         FROM registros
-        WHERE tipo_equipamento = s.tipo_equipamento AND tipo_registro = 'retirada'
+        WHERE tipo_equipamento = s.tipo_equipamento
+          AND responsavel = s.responsavel
+          AND tipo_registro = 'retirada'
         ORDER BY data_hora DESC LIMIT 1
       ) r ON true
       WHERE s.pendente > 0
