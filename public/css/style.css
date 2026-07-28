@@ -861,6 +861,134 @@ footer {
 }
 
 /* ==========================================
+   BOTÃO EDITAR REGISTRO (novo)
+   ========================================== */
+.btn-editar-registro {
+  margin-top: 8px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-editar-registro:hover {
+  background: var(--accent);
+  color: var(--bg-secondary);
+}
+
+/* ==========================================
+   MODAL DE EDIÇÃO (novo)
+   ========================================== */
+.modal-editar-content {
+  max-width: 480px;
+  text-align: left;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-editar-content h2,
+.modal-editar-content p {
+  text-align: center;
+}
+
+#modalEditar select,
+#modalEditar input[type="text"],
+#modalEditar input[type="number"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+#modalEditar select:focus,
+#modalEditar input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tipo-btn-edit,
+.periodo-btn-edit,
+.aula-btn-edit {
+  flex: 1;
+  min-width: 80px;
+  padding: 7px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-button);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tipo-btn-edit:hover,
+.periodo-btn-edit:hover,
+.aula-btn-edit:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.tipo-btn-edit.selected,
+.periodo-btn-edit.selected,
+.aula-btn-edit.selected {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.aula-btn-edit {
+  min-width: 44px;
+  flex: 0 1 calc(16.666% - 6px);
+}
+
+/* ==========================================
+   PAGINAÇÃO DO HISTÓRICO (novo)
+   ========================================== */
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.paginacao button {
+  padding: 6px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-button);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.paginacao button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.paginacao button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginacao .pagina-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* ==========================================
    RESPONSIVO
    ========================================== */
 @media (max-width: 800px) {
@@ -902,5 +1030,3 @@ footer {
     font-size: 1.3rem;
   }
 }
-
-
