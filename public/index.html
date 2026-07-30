@@ -20,71 +20,6 @@
     </div>
   </div>
 
-  <!-- Modal de Edição de Registro (novo) -->
-  <div class="modal-overlay" id="modalEditar" style="display:none;">
-    <div class="modal-content modal-editar-content">
-      <h2>✏️ Editar Registro</h2>
-      <p>Corrija os dados do registro selecionado.</p>
-
-      <div class="form-group">
-        <label>Tipo de Equipamento:</label>
-        <div class="tipo-selector">
-          <button type="button" class="tipo-btn-edit" data-tipo="1">1 - Chromebook</button>
-          <button type="button" class="tipo-btn-edit" data-tipo="2">2 - Positivo</button>
-          <button type="button" class="tipo-btn-edit" data-tipo="3">3 - Tablet</button>
-        </div>
-        <input type="hidden" id="editTipoEquipamento">
-      </div>
-
-      <div class="form-group">
-        <label for="editTipoRegistro">Tipo de Movimentação:</label>
-        <select id="editTipoRegistro">
-          <option value="retirada">Retirada</option>
-          <option value="devolucao">Devolução</option>
-        </select>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group half">
-          <label for="editQuantidade">Quantidade:</label>
-          <input type="number" id="editQuantidade" min="1">
-        </div>
-        <div class="form-group half">
-          <label for="editResponsavel">Professor Responsável:</label>
-          <input type="text" id="editResponsavel">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Período:</label>
-        <div class="periodo-selector">
-          <button type="button" class="periodo-btn-edit" data-periodo="manha">☀️ Manhã</button>
-          <button type="button" class="periodo-btn-edit" data-periodo="tarde">🌤️ Tarde</button>
-          <button type="button" class="periodo-btn-edit" data-periodo="noite">🌙 Noite</button>
-        </div>
-        <input type="text" id="editPeriodo" placeholder="Ou digite manualmente (ex: Devolução)">
-      </div>
-
-      <div class="form-group">
-        <label>Aulas:</label>
-        <div class="aula-selector">
-          <button type="button" class="aula-btn-edit" data-aula="1">1ª</button>
-          <button type="button" class="aula-btn-edit" data-aula="2">2ª</button>
-          <button type="button" class="aula-btn-edit" data-aula="3">3ª</button>
-          <button type="button" class="aula-btn-edit" data-aula="4">4ª</button>
-          <button type="button" class="aula-btn-edit" data-aula="5">5ª</button>
-          <button type="button" class="aula-btn-edit" data-aula="6">6ª</button>
-        </div>
-        <input type="text" id="editAulaTexto" placeholder="Ou digite manualmente (ex: N/A)">
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn btn-cancelar" onclick="fecharModalEditar()">Cancelar</button>
-        <button class="btn btn-entrar" onclick="salvarEdicao()">Salvar Alterações</button>
-      </div>
-    </div>
-  </div>
-
   <div class="container">
     <header>
       <h1>📋 Controle de Equipamentos</h1>
@@ -130,9 +65,9 @@
           </div>
         </section>
 
-        <!-- Painel de Registro -->
-        <section class="panel panel-registro" id="panelRegistro">
-          <h2>✍️ Novo Registro</h2>
+        <!-- Painel de Retirada -->
+        <section class="panel panel-registro panel-retirada-box" id="panelRegistro">
+          <h2>📤 Nova Retirada</h2>
           
           <div class="form-group">
             <label>Tipo de Equipamento:</label>
@@ -180,19 +115,17 @@
           </div>
 
           <div class="actions">
-            <button class="btn btn-retirada" onclick="registrarRetirada()">
+            <button class="btn btn-retirada btn-retirada-full" onclick="registrarRetirada()">
               📤 Registrar RETIRADA
-            </button>
-            <button class="btn btn-devolucao" onclick="registrarDevolucao()">
-              📥 Registrar DEVOLUÇÃO
             </button>
           </div>
         </section>
       </div>
 
-      <!-- Painel de Retiradas Ativas -->
-      <section class="panel" id="panelAtivos">
-        <h2>📤 Retiradas Ativas (Aguardando Devolução)</h2>
+      <!-- Painel de Devolução (Retiradas Ativas) -->
+      <section class="panel panel-devolucao-box" id="panelAtivos">
+        <h2>📥 Devolução de Equipamentos</h2>
+        <p class="panel-subtitulo">Equipamentos em uso aguardando devolução. Devolva tudo de uma vez ou apenas parte da quantidade.</p>
         <div class="registros-lista" id="listaAtivos"></div>
       </section>
 
@@ -221,10 +154,6 @@
           <button class="filtro-btn" data-filtro="hoje">Hoje</button>
         </div>
         <div class="registros-lista" id="listaHistorico"></div>
-
-        <!-- Paginação (novo) -->
-        <div class="paginacao" id="paginacaoHistorico"></div>
-
         <button class="btn btn-limpar" onclick="limparHistorico()">🗑️ Limpar Histórico</button>
       </section>
 

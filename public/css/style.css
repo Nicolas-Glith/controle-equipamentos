@@ -346,6 +346,20 @@ header h1 {
   border: 2px solid var(--gold-light);
 }
 
+.panel-retirada-box {
+  border: 2px solid var(--warning);
+}
+
+.panel-devolucao-box {
+  border: 2px solid var(--success);
+}
+
+.panel-subtitulo {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: -6px 0 10px;
+}
+
 /* ==========================================
    FORMULÁRIO
    ========================================== */
@@ -500,6 +514,87 @@ header h1 {
 .btn-admin:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+}
+
+.btn-retirada-full {
+  min-width: 100%;
+}
+
+.registro-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.registro-actions .btn {
+  min-width: auto;
+  flex: 1 1 140px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+}
+
+.btn-parcial {
+  background: linear-gradient(135deg, #0984e3, #4aa3ff);
+  color: white;
+}
+
+.btn-parcial:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(9, 132, 227, 0.3);
+}
+
+.parcial-form {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color);
+  flex-wrap: wrap;
+}
+
+.parcial-form .input-parcial {
+  flex: 1 1 120px;
+  padding: 7px 10px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.parcial-form .input-parcial:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.parcial-form button {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-confirmar-parcial {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: white;
+}
+
+.btn-confirmar-parcial:hover {
+  transform: translateY(-2px);
+}
+
+.btn-cancelar-parcial {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger) !important;
+}
+
+.btn-cancelar-parcial:hover {
+  opacity: 0.8;
 }
 
 .btn-imprimir {
@@ -858,134 +953,6 @@ footer {
 
 .print-header {
   display: none;
-}
-
-/* ==========================================
-   BOTÃO EDITAR REGISTRO (novo)
-   ========================================== */
-.btn-editar-registro {
-  margin-top: 8px;
-  background: var(--accent-light);
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-editar-registro:hover {
-  background: var(--accent);
-  color: var(--bg-secondary);
-}
-
-/* ==========================================
-   MODAL DE EDIÇÃO (novo)
-   ========================================== */
-.modal-editar-content {
-  max-width: 480px;
-  text-align: left;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-editar-content h2,
-.modal-editar-content p {
-  text-align: center;
-}
-
-#modalEditar select,
-#modalEditar input[type="text"],
-#modalEditar input[type="number"] {
-  width: 100%;
-  padding: 8px 12px;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-input);
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  margin-top: 4px;
-}
-
-#modalEditar select:focus,
-#modalEditar input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.tipo-btn-edit,
-.periodo-btn-edit,
-.aula-btn-edit {
-  flex: 1;
-  min-width: 80px;
-  padding: 7px 8px;
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-button);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.tipo-btn-edit:hover,
-.periodo-btn-edit:hover,
-.aula-btn-edit:hover {
-  border-color: var(--accent);
-  background: var(--accent-light);
-}
-
-.tipo-btn-edit.selected,
-.periodo-btn-edit.selected,
-.aula-btn-edit.selected {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: bold;
-}
-
-.aula-btn-edit {
-  min-width: 44px;
-  flex: 0 1 calc(16.666% - 6px);
-}
-
-/* ==========================================
-   PAGINAÇÃO DO HISTÓRICO (novo)
-   ========================================== */
-.paginacao {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-
-.paginacao button {
-  padding: 6px 14px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-button);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 0.85rem;
-  transition: all 0.3s;
-}
-
-.paginacao button:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.paginacao button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.paginacao .pagina-info {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
 }
 
 /* ==========================================

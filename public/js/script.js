@@ -18,26 +18,10 @@ const AULAS = {
   4: '4ª Aula', 5: '5ª Aula', 6: '6ª Aula'
 };
 
-// Intervalo de atualização automática (ms)
-const INTERVALO_ATUALIZACAO = 25000;
-
 let filtroAtual = 'todos';
 let termoBusca = '';
 let isAdmin = false;
 let aulasSelecionadas = new Set();
-
-// Correção do bug de inventário hardcoded:
-// os totais agora vêm da própria API e ficam guardados aqui,
-// em vez de um objeto fixo no código.
-let inventarioTotais = {}; // ex: { '1': 22, '2': 36, '3': 44 }
-
-// Paginação do histórico
-let paginaAtual = 1;
-const ITENS_POR_PAGINA = 20;
-
-// Registro em edição (histórico admin)
-let registroEditandoId = null;
-let aulasEdicaoSelecionadas = new Set();
 
 // ==========================================
 // INICIALIZAÇÃO
@@ -48,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
   verificarSessao();
   carregarInventario();
   carregarRetiradasAtivas();
-  iniciarAtualizacaoAutomatica();
 });
 
 function inicializarEventos() {
@@ -85,92 +68,70 @@ function inicializarEventos() {
       clearTimeout(debounce);
       debounce = setTimeout(() => {
         termoBusca = e.target.value.trim();
-        paginaAtual = 1;
         carregarRegistros();
       }, 300);
     });
   }
 
-  // Enter no login
+  // Enter
   document.getElementById('senhaAdmin')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') tentarLogin();
   });
 
-  // Enter no modal de edição
-  document.getElementById('modalEditar')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') salvarEdicao();
-  });
-
-  // 🎧 Ouvinte para Devolução Rápida (Seguro contra apóstrofos e aspas)
+  // 🎧 Ouvinte para Devolução (Total ou Parcial) - Seguro contra apóstrofos e aspas
   const listaAtivos = document.getElementById('listaAtivos');
   if (listaAtivos) {
     listaAtivos.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-devolver-tudo');
-      if (btn) {
-        const tipo = btn.dataset.tipo;
-        const qtd = btn.dataset.qtd;
-        const resp = btn.dataset.resp;
+      const btnTudo = e.target.closest('.btn-devolver-tudo');
+      if (btnTudo) {
+        const tipo = btnTudo.dataset.tipo;
+        const qtd = btnTudo.dataset.qtd;
+        const resp = btnTudo.dataset.resp;
         devolucaoRapida(tipo, qtd, resp);
+        return;
+      }
+
+      const btnParcial = e.target.closest('.btn-devolver-parcial');
+      if (btnParcial) {
+        const card = btnParcial.closest('.registro-item');
+        const form = card.querySelector('.parcial-form');
+        form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
+        if (form.style.display === 'flex') {
+          const input = form.querySelector('.input-parcial');
+          input.value = '';
+          input.focus();
+        }
+        return;
+      }
+
+      const btnCancelar = e.target.closest('.btn-cancelar-parcial');
+      if (btnCancelar) {
+        btnCancelar.closest('.parcial-form').style.display = 'none';
+        return;
+      }
+
+      const btnConfirmar = e.target.closest('.btn-confirmar-parcial');
+      if (btnConfirmar) {
+        const card = btnConfirmar.closest('.registro-item');
+        const form = card.querySelector('.parcial-form');
+        const input = form.querySelector('.input-parcial');
+        const max = parseInt(input.max);
+        const valor = parseInt(input.value);
+
+        if (!valor || valor < 1) {
+          return mostrarToast('Informe uma quantidade válida!', 'error');
+        }
+        if (valor > max) {
+          return mostrarToast(`Quantidade maior que o disponível para devolução (${max})!`, 'error');
+        }
+
+        const tipo = btnConfirmar.dataset.tipo;
+        const resp = btnConfirmar.dataset.resp;
+        devolucaoRapida(tipo, valor, resp);
+        form.style.display = 'none';
       }
     });
   }
-
-  // 🎧 Ouvinte para botão Editar no histórico
-  const listaHistorico = document.getElementById('listaHistorico');
-  if (listaHistorico) {
-    listaHistorico.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-editar-registro');
-      if (btn) {
-        abrirModalEditar(btn.dataset.id);
-      }
-    });
-  }
-
-  // 🎧 Ouvinte para botões de paginação
-  const paginacao = document.getElementById('paginacaoHistorico');
-  if (paginacao) {
-    paginacao.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-pagina]');
-      if (btn && !btn.disabled) {
-        paginaAtual = parseInt(btn.dataset.pagina);
-        carregarRegistros();
-      }
-    });
-  }
-
-  // Seletores dentro do modal de edição
-  document.querySelectorAll('#modalEditar .tipo-btn-edit').forEach(btn => {
-    btn.addEventListener('click', () => selecionarTipoEdicao(btn));
-  });
-  document.querySelectorAll('#modalEditar .periodo-btn-edit').forEach(btn => {
-    btn.addEventListener('click', () => selecionarPeriodoEdicao(btn));
-  });
-  document.querySelectorAll('#modalEditar .aula-btn-edit').forEach(btn => {
-    btn.addEventListener('click', () => selecionarAulaEdicao(btn));
-  });
-}
-
-// ==========================================
-// ATUALIZAÇÃO AUTOMÁTICA (novo)
-// Mantém o painel sincronizado entre professores
-// diferentes usando o sistema ao mesmo tempo, sem
-// precisar dar F5 manualmente.
-// ==========================================
-function iniciarAtualizacaoAutomatica() {
-  setInterval(async () => {
-    // Evita interromper o usuário se um modal estiver aberto
-    const modalLoginAberto = document.getElementById('modalLogin')?.style.display === 'flex';
-    const modalEditarAberto = document.getElementById('modalEditar')?.style.display === 'flex';
-    if (modalLoginAberto || modalEditarAberto) return;
-
-    try {
-      await carregarInventario();
-      await carregarRetiradasAtivas();
-      if (isAdmin) await carregarRegistros();
-    } catch (err) {
-      console.error('Erro na atualização automática:', err);
-    }
-  }, INTERVALO_ATUALIZACAO);
 }
 
 // ==========================================
@@ -185,17 +146,6 @@ async function apiGet(endpoint) {
 async function apiPost(endpoint, body) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erro na requisição');
-  return data;
-}
-
-async function apiPut(endpoint, body) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
@@ -220,22 +170,7 @@ async function carregarInventario() {
       const idMap = { 1: 'dispChromebook', 2: 'dispPositivo', 3: 'dispTablet' };
       const el = document.getElementById(idMap[item.tipo_codigo]);
       if (el) el.textContent = item.disponivel;
-
-      // Guarda o total real vindo do banco (corrige o bug do
-      // total hardcoded que ficava desatualizado após migrações)
-      inventarioTotais[item.tipo_codigo] = parseInt(item.quantidade_total);
-
-      // Atualiza também o número "total" exibido no card, caso
-      // tenha mudado desde o último carregamento
-      const totalIdMap = { 1: '.chromebook .inv-total', 2: '.positivo .inv-total', 3: '.tablet .inv-total' };
-      const totalEl = document.querySelector(totalIdMap[item.tipo_codigo]);
-      if (totalEl) totalEl.textContent = item.quantidade_total;
     });
-
-    // Se o tipo selecionado no formulário estiver com o hint aberto,
-    // atualiza o hint com o total já correto.
-    const tipoSelecionado = document.getElementById('tipoEquipamento').value;
-    if (tipoSelecionado) atualizarHintDisponivel(tipoSelecionado);
   } catch (err) {
     console.error('Erro ao carregar inventário:', err);
   }
@@ -244,11 +179,10 @@ async function carregarInventario() {
 function atualizarHintDisponivel(tipo) {
   const idMap = { '1': 'dispChromebook', '2': 'dispPositivo', '3': 'dispTablet' };
   const dispEl = document.getElementById(idMap[tipo]);
-  // Usa o total real vindo da API (inventarioTotais), não mais um valor fixo
-  const total = inventarioTotais[tipo] ?? inventarioTotais[parseInt(tipo)] ?? '?';
+  const totalMap = { '1': 22, '2': 36, '3': 44 };
   if (dispEl) {
     const disp = parseInt(dispEl.textContent) || 0;
-    document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${total} ${TIPOS_EQUIPAMENTO[tipo]}`;
+    document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${totalMap[tipo]} ${TIPOS_EQUIPAMENTO[tipo]}`;
     document.getElementById('quantidade').max = disp;
   }
 }
@@ -308,9 +242,6 @@ async function registrarRetirada() {
     return mostrarToast('Nome inválido! Apenas letras, mínimo 3 caracteres.', 'error');
   }
 
-  const btn = document.querySelector('.btn-retirada');
-  desabilitarBotao(btn, true);
-
   try {
     await apiPost('/api/registros', {
       tipo_equipamento: parseInt(tipo),
@@ -325,51 +256,7 @@ async function registrarRetirada() {
     await atualizarTelaCompleta();
   } catch (err) {
     mostrarToast(err.message, 'error');
-  } finally {
-    desabilitarBotao(btn, false);
   }
-}
-
-async function registrarDevolucao() {
-  const tipo = document.getElementById('tipoEquipamento').value;
-  const quantidade = parseInt(document.getElementById('quantidade').value);
-  const responsavel = document.getElementById('responsavel').value.trim();
-
-  if (!tipo || !quantidade || !responsavel) {
-    return mostrarToast('Preencha todos os campos!', 'error');
-  }
-  if (/[0-9]/.test(responsavel)) {
-    return mostrarToast('Nome inválido!', 'error');
-  }
-
-  const btn = document.querySelector('.btn-devolucao');
-  desabilitarBotao(btn, true);
-
-  try {
-    await apiPost('/api/registros', {
-      tipo_equipamento: parseInt(tipo),
-      tipo_registro: 'devolucao',
-      quantidade,
-      responsavel,
-      periodo: 'Devolução',
-      aula: 'N/A'
-    });
-    limparFormulario();
-    mostrarToast(`Devolução registrada: ${quantidade}x ${TIPOS_EQUIPAMENTO[tipo]}`, 'success');
-    await atualizarTelaCompleta();
-  } catch (err) {
-    mostrarToast(err.message, 'error');
-  } finally {
-    desabilitarBotao(btn, false);
-  }
-}
-
-// Evita duplo-clique / clique nervoso gerando registros duplicados
-function desabilitarBotao(btn, desabilitado) {
-  if (!btn) return;
-  btn.disabled = desabilitado;
-  btn.style.opacity = desabilitado ? '0.6' : '1';
-  btn.style.cursor = desabilitado ? 'not-allowed' : 'pointer';
 }
 
 async function devolucaoRapida(tipo, quantidade, responsavel) {
@@ -400,7 +287,9 @@ async function carregarRetiradasAtivas() {
        return;
     }
     
-    container.innerHTML = ativos.map(item => `
+    container.innerHTML = ativos.map(item => {
+      const respEscapado = item.responsavel.replace(/"/g, '&quot;');
+      return `
       <div class="registro-item retirada">
         <div class="registro-header">
           <span class="registro-tipo retirada">⚠️ Em Uso (${item.quantidade})</span>
@@ -412,15 +301,28 @@ async function carregarRetiradasAtivas() {
           <span><strong>Período:</strong> ${item.periodo}</span>
           <span><strong>Aula:</strong> ${item.aula}</span>
         </div>
-        <button class="btn btn-devolucao btn-devolver-tudo" 
-                style="margin-top:8px;min-width:auto;flex:none;padding:6px 14px;font-size:0.8rem;"
-                data-tipo="${item.tipo_equipamento}" 
-                data-qtd="${item.quantidade}" 
-                data-resp="${item.responsavel.replace(/"/g, '&quot;')}">
-          📥 Devolver Tudo
-        </button>
+        <div class="registro-actions">
+          <button class="btn btn-devolucao btn-devolver-tudo"
+                  data-tipo="${item.tipo_equipamento}"
+                  data-qtd="${item.quantidade}"
+                  data-resp="${respEscapado}">
+            📥 Devolver Tudo
+          </button>
+          <button class="btn btn-parcial btn-devolver-parcial"
+                  data-tipo="${item.tipo_equipamento}"
+                  data-qtd="${item.quantidade}"
+                  data-resp="${respEscapado}">
+            ✂️ Devolver Parcialmente
+          </button>
+        </div>
+        <div class="parcial-form">
+          <input type="number" class="input-parcial" min="1" max="${item.quantidade}" placeholder="Qtd (máx. ${item.quantidade})">
+          <button class="btn-confirmar-parcial" data-tipo="${item.tipo_equipamento}" data-resp="${respEscapado}">✔️ Confirmar</button>
+          <button class="btn-cancelar-parcial">✕</button>
+        </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   } catch (err) {
     console.error('Erro ativos:', err);
     container.innerHTML = '<div class="empty-state">❌ Erro ao carregar retiradas.</div>';
@@ -428,7 +330,7 @@ async function carregarRetiradasAtivas() {
 }
 
 // ==========================================
-// HISTÓRICO (Admin) — agora paginado
+// HISTÓRICO (Admin)
 // ==========================================
 async function carregarRegistros() {
   if (!isAdmin) return;
@@ -436,16 +338,11 @@ async function carregarRegistros() {
     const params = new URLSearchParams();
     if (filtroAtual !== 'todos') params.set('filtro', filtroAtual);
     if (termoBusca) params.set('busca', termoBusca);
-    params.set('page', paginaAtual);
-    params.set('limit', ITENS_POR_PAGINA);
-
-    const resposta = await apiGet(`/api/registros?${params.toString()}`);
-    const registros = resposta.data;
-
+    const registros = await apiGet(`/api/registros?${params.toString()}`);
+    
     const container = document.getElementById('listaHistorico');
     if (registros.length === 0) {
       container.innerHTML = '<div class="empty-state">Nenhum registro encontrado.</div>';
-      renderizarPaginacao(1, 1);
       return;
     }
     
@@ -464,47 +361,23 @@ async function carregarRegistros() {
           <span><strong>Período:</strong> ${item.periodo}</span>
           <span><strong>Aula:</strong> ${item.aula}</span>
         </div>
-        <button class="btn-editar-registro" data-id="${item.id}" title="Editar registro">
-          ✏️ Editar
-        </button>
       </div>
     `).join('');
-
-    renderizarPaginacao(resposta.page, resposta.totalPages);
   } catch (err) {
     console.error('Erro ao carregar histórico:', err);
   }
-}
-
-function renderizarPaginacao(paginaAtualResp, totalPaginas) {
-  const container = document.getElementById('paginacaoHistorico');
-  if (!container) return;
-
-  if (totalPaginas <= 1) {
-    container.innerHTML = '';
-    return;
-  }
-
-  let botoes = '';
-  botoes += `<button data-pagina="${paginaAtualResp - 1}" ${paginaAtualResp <= 1 ? 'disabled' : ''}>◀ Anterior</button>`;
-  botoes += `<span class="pagina-info">Página ${paginaAtualResp} de ${totalPaginas}</span>`;
-  botoes += `<button data-pagina="${paginaAtualResp + 1}" ${paginaAtualResp >= totalPaginas ? 'disabled' : ''}>Próxima ▶</button>`;
-
-  container.innerHTML = botoes;
 }
 
 function filtrarHistorico(btn) {
   document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   filtroAtual = btn.dataset.filtro;
-  paginaAtual = 1;
   carregarRegistros();
 }
 
 function limparBusca() {
   document.getElementById('buscaHistorico').value = '';
   termoBusca = '';
-  paginaAtual = 1;
   carregarRegistros();
 }
 
@@ -512,114 +385,12 @@ async function limparHistorico() {
   if (!confirm('⚠️ Limpar TODO o histórico? Irreversível!')) return;
   try {
     await apiDelete('/api/registros');
-    paginaAtual = 1;
     carregarRegistros();
     carregarRetiradasAtivas();
     carregarInventario();
     mostrarToast('Histórico limpo!', 'info');
   } catch (err) {
     mostrarToast('Erro ao limpar: ' + err.message, 'error');
-  }
-}
-
-// ==========================================
-// EDIÇÃO DE REGISTRO (novo)
-// ==========================================
-function abrirModalEditar(id) {
-  // Busca o registro atual na lista já carregada na tela
-  const item = document.querySelector(`.btn-editar-registro[data-id="${id}"]`)?.closest('.registro-item');
-  if (!item) return;
-
-  registroEditandoId = id;
-
-  // Preenche os dados a partir do texto exibido (mais simples e evita nova chamada à API)
-  const tipoTexto = item.querySelector('.registro-info span:nth-child(1)').textContent.replace('Equip:', '').trim();
-  const qtdTexto = item.querySelector('.registro-info span:nth-child(2)').textContent.replace('Qtd:', '').trim();
-  const respTexto = item.querySelector('.registro-info span:nth-child(3)').textContent.replace('Resp:', '').trim();
-  const periodoTexto = item.querySelector('.registro-info span:nth-child(4)').textContent.replace('Período:', '').trim();
-  const aulaTexto = item.querySelector('.registro-info span:nth-child(5)').textContent.replace('Aula:', '').trim();
-  const tipoRegistro = item.classList.contains('retirada') ? 'retirada' : 'devolucao';
-
-  const tipoCodigo = Object.keys(TIPOS_EQUIPAMENTO).find(k => TIPOS_EQUIPAMENTO[k] === tipoTexto);
-
-  document.getElementById('editQuantidade').value = qtdTexto;
-  document.getElementById('editResponsavel').value = respTexto;
-  document.getElementById('editTipoRegistro').value = tipoRegistro;
-  document.getElementById('editTipoEquipamento').value = tipoCodigo || '';
-  document.getElementById('editPeriodo').value = periodoTexto;
-  document.getElementById('editAulaTexto').value = aulaTexto;
-
-  document.querySelectorAll('#modalEditar .tipo-btn-edit').forEach(b => {
-    b.classList.toggle('selected', b.dataset.tipo === tipoCodigo);
-  });
-
-  document.getElementById('modalEditar').style.display = 'flex';
-}
-
-function selecionarTipoEdicao(btn) {
-  document.querySelectorAll('#modalEditar .tipo-btn-edit').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('editTipoEquipamento').value = btn.dataset.tipo;
-}
-
-function selecionarPeriodoEdicao(btn) {
-  document.querySelectorAll('#modalEditar .periodo-btn-edit').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('editPeriodo').value = PERIODOS[btn.dataset.periodo];
-}
-
-function selecionarAulaEdicao(btn) {
-  const aula = btn.dataset.aula;
-  if (aulasEdicaoSelecionadas.has(aula)) {
-    aulasEdicaoSelecionadas.delete(aula);
-    btn.classList.remove('selected');
-  } else {
-    aulasEdicaoSelecionadas.add(aula);
-    btn.classList.add('selected');
-  }
-  const aulasTexto = Array.from(aulasEdicaoSelecionadas).map(a => AULAS[a]).join(', ');
-  if (aulasTexto) document.getElementById('editAulaTexto').value = aulasTexto;
-}
-
-function fecharModalEditar() {
-  document.getElementById('modalEditar').style.display = 'none';
-  registroEditandoId = null;
-  aulasEdicaoSelecionadas.clear();
-  document.querySelectorAll('#modalEditar .tipo-btn-edit, #modalEditar .periodo-btn-edit, #modalEditar .aula-btn-edit')
-    .forEach(b => b.classList.remove('selected'));
-}
-
-async function salvarEdicao() {
-  if (!registroEditandoId) return;
-
-  const tipo = document.getElementById('editTipoEquipamento').value;
-  const tipoRegistro = document.getElementById('editTipoRegistro').value;
-  const quantidade = parseInt(document.getElementById('editQuantidade').value);
-  const responsavel = document.getElementById('editResponsavel').value.trim();
-  const periodo = document.getElementById('editPeriodo').value;
-  const aula = document.getElementById('editAulaTexto').value.trim();
-
-  if (!tipo || !quantidade || !responsavel || !periodo || !aula) {
-    return mostrarToast('Preencha todos os campos!', 'error');
-  }
-  if (/[0-9]/.test(responsavel)) {
-    return mostrarToast('Nome inválido! Não pode conter números.', 'error');
-  }
-
-  try {
-    await apiPut(`/api/registros/${registroEditandoId}`, {
-      tipo_equipamento: parseInt(tipo),
-      tipo_registro: tipoRegistro,
-      quantidade,
-      responsavel,
-      periodo,
-      aula
-    });
-    mostrarToast('Registro atualizado com sucesso!', 'success');
-    fecharModalEditar();
-    await atualizarTelaCompleta();
-  } catch (err) {
-    mostrarToast(err.message, 'error');
   }
 }
 
@@ -674,10 +445,7 @@ function verificarSessao() {
   document.getElementById('panelHistorico').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('panelLoginAdmin').style.display = isAdmin ? 'none' : 'block';
   document.getElementById('adminBar').style.display = isAdmin ? 'flex' : 'none';
-  if (isAdmin) {
-    paginaAtual = 1;
-    carregarRegistros();
-  }
+  if (isAdmin) carregarRegistros();
 }
 
 // ==========================================
