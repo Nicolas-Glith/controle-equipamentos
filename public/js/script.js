@@ -334,13 +334,20 @@ async function carregarRetiradasAtivas() {
 // ==========================================
 async function carregarRegistros() {
   if (!isAdmin) return;
+  const container = document.getElementById('listaHistorico');
   try {
     const params = new URLSearchParams();
     if (filtroAtual !== 'todos') params.set('filtro', filtroAtual);
     if (termoBusca) params.set('busca', termoBusca);
-    const registros = await apiGet(`/api/registros?${params.toString()}`);
-    
-    const container = document.getElementById('listaHistorico');
+    const resposta = await apiGet(`/api/registros?${params.toString()}`);
+    const registros = Array.isArray(resposta) ? resposta : (Array.isArray(resposta?.data) ? resposta.data : null);
+
+    if (!registros) {
+      console.error('Resposta inesperada de /api/registros:', resposta);
+      container.innerHTML = `<div class="empty-state">❌ A API não retornou uma lista. Resposta: ${JSON.stringify(resposta)}</div>`;
+      return;
+    }
+
     if (registros.length === 0) {
       container.innerHTML = '<div class="empty-state">Nenhum registro encontrado.</div>';
       return;
@@ -365,6 +372,7 @@ async function carregarRegistros() {
     `).join('');
   } catch (err) {
     console.error('Erro ao carregar histórico:', err);
+    container.innerHTML = `<div class="empty-state">❌ Erro ao carregar histórico: ${err.message}</div>`;
   }
 }
 
