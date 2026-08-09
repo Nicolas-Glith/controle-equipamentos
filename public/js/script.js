@@ -17,6 +17,11 @@ const AULAS = {
   1: '1ª Aula', 2: '2ª Aula', 3: '3ª Aula',
   4: '4ª Aula', 5: '5ª Aula', 6: '6ª Aula'
 };
+const EQUIP_MAP = {
+  1: { disp: 'dispChromebook', total: 'totalChromebook', bar: 'barChromebook' },
+  2: { disp: 'dispPositivo', total: 'totalPositivo', bar: 'barPositivo' },
+  3: { disp: 'dispTablet', total: 'totalTablet', bar: 'barTablet' }
+};
 
 let filtroAtual = 'todos';
 let termoBusca = '';
@@ -52,12 +57,17 @@ function inicializarEventos() {
   const inputResp = document.getElementById('responsavel');
   inputResp.addEventListener('input', function() {
     this.value = this.value.replace(/[0-9]/g, '');
+    this.classList.remove('field-invalid');
   });
   inputResp.addEventListener('keypress', function(e) {
     if (/[0-9]/.test(e.key)) {
       e.preventDefault();
-      mostrarToast('Números não são permitidos no nome!', 'error');
+      mostrarToast('Números não são permitidos no nome.', 'error');
     }
+  });
+
+  document.getElementById('quantidade')?.addEventListener('input', function() {
+    this.classList.remove('field-invalid');
   });
 
   // Busca
@@ -78,7 +88,7 @@ function inicializarEventos() {
     if (e.key === 'Enter') tentarLogin();
   });
 
-  // 🎧 Ouvinte para Devolução (Total ou Parcial) - Seguro contra apóstrofos e aspas
+  // Ouvinte para Devolução (Total ou Parcial) — seguro contra apóstrofos e aspas
   const listaAtivos = document.getElementById('listaAtivos');
   if (listaAtivos) {
     listaAtivos.addEventListener('click', (e) => {
@@ -119,10 +129,10 @@ function inicializarEventos() {
         const valor = parseInt(input.value);
 
         if (!valor || valor < 1) {
-          return mostrarToast('Informe uma quantidade válida!', 'error');
+          return mostrarToast('Informe uma quantidade válida.', 'error');
         }
         if (valor > max) {
-          return mostrarToast(`Quantidade maior que o disponível para devolução (${max})!`, 'error');
+          return mostrarToast(`Quantidade maior que o disponível para devolução (${max}).`, 'error');
         }
 
         const tipo = btnConfirmar.dataset.tipo;
@@ -167,9 +177,29 @@ async function carregarInventario() {
   try {
     const dados = await apiGet('/api/inventario');
     dados.forEach(item => {
-      const idMap = { 1: 'dispChromebook', 2: 'dispPositivo', 3: 'dispTablet' };
-      const el = document.getElementById(idMap[item.tipo_codigo]);
-      if (el) el.textContent = item.disponivel;
+      const ids = EQUIP_MAP[item.tipo_codigo];
+      if (!ids) return;
+
+      const dispEl = document.getElementById(ids.disp);
+      const totalEl = document.getElementById(ids.total);
+      const barEl = document.getElementById(ids.bar);
+
+      const disponivel = Number(item.disponivel);
+      const total = Number(item.quantidade_total);
+
+      if (dispEl) dispEl.textContent = disponivel;
+      if (totalEl) totalEl.textContent = total;
+
+      if (barEl) {
+        const pct = total > 0 ? Math.max(0, Math.min(100, (disponivel / total) * 100)) : 0;
+        barEl.style.width = `${pct}%`;
+        barEl.classList.remove('status-low', 'status-empty');
+        if (pct === 0) {
+          barEl.classList.add('status-empty');
+        } else if (pct <= 30) {
+          barEl.classList.add('status-low');
+        }
+      }
     });
   } catch (err) {
     console.error('Erro ao carregar inventário:', err);
@@ -177,12 +207,14 @@ async function carregarInventario() {
 }
 
 function atualizarHintDisponivel(tipo) {
-  const idMap = { '1': 'dispChromebook', '2': 'dispPositivo', '3': 'dispTablet' };
-  const dispEl = document.getElementById(idMap[tipo]);
-  const totalMap = { '1': 22, '2': 36, '3': 44 };
-  if (dispEl) {
+  const ids = EQUIP_MAP[tipo];
+  if (!ids) return;
+  const dispEl = document.getElementById(ids.disp);
+  const totalEl = document.getElementById(ids.total);
+  if (dispEl && totalEl) {
     const disp = parseInt(dispEl.textContent) || 0;
-    document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${totalMap[tipo]} ${TIPOS_EQUIPAMENTO[tipo]}`;
+    const total = parseInt(totalEl.textContent) || 0;
+    document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${total} ${TIPOS_EQUIPAMENTO[tipo]}`;
     document.getElementById('quantidade').max = disp;
   }
 }
@@ -194,6 +226,7 @@ function selecionarTipo(btn) {
   document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   document.getElementById('tipoEquipamento').value = btn.dataset.tipo;
+  document.querySelector('.tipo-selector')?.classList.remove('field-invalid');
   atualizarHintDisponivel(btn.dataset.tipo);
 }
 
@@ -201,6 +234,7 @@ function selecionarPeriodo(btn) {
   document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   document.getElementById('periodo').value = btn.dataset.periodo;
+  document.querySelector('.periodo-selector')?.classList.remove('field-invalid');
 }
 
 function selecionarAula(btn) {
@@ -213,6 +247,13 @@ function selecionarAula(btn) {
     btn.classList.add('selected');
   }
   document.getElementById('aula').value = Array.from(aulasSelecionadas).join(',');
+  if (aulasSelecionadas.size > 0) {
+    document.querySelector('.aula-selector')?.classList.remove('field-invalid');
+  }
+}
+
+function limparCamposInvalidos() {
+  document.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
 }
 
 // ==========================================
@@ -230,16 +271,46 @@ async function atualizarTelaCompleta() {
 
 async function registrarRetirada() {
   const tipo = document.getElementById('tipoEquipamento').value;
-  const quantidade = parseInt(document.getElementById('quantidade').value);
-  const responsavel = document.getElementById('responsavel').value.trim();
+  const quantidadeInput = document.getElementById('quantidade');
+  const quantidade = parseInt(quantidadeInput.value);
+  const responsavelInput = document.getElementById('responsavel');
+  const responsavel = responsavelInput.value.trim();
   const periodo = document.getElementById('periodo').value;
   const aulas = Array.from(aulasSelecionadas).map(a => AULAS[a]).join(', ');
 
-  if (!tipo || !quantidade || !responsavel || !periodo || aulasSelecionadas.size === 0) {
-    return mostrarToast('Preencha todos os campos e selecione pelo menos uma aula!', 'error');
+  limparCamposInvalidos();
+
+  const faltando = [];
+  const camposInvalidos = [];
+
+  if (!tipo) {
+    faltando.push('Equipamento');
+    camposInvalidos.push(document.querySelector('.tipo-selector'));
+  }
+  if (!quantidade || quantidade < 1) {
+    faltando.push('Quantidade');
+    camposInvalidos.push(quantidadeInput);
+  }
+  if (!responsavel) {
+    faltando.push('Professor responsável');
+    camposInvalidos.push(responsavelInput);
+  }
+  if (!periodo) {
+    faltando.push('Período');
+    camposInvalidos.push(document.querySelector('.periodo-selector'));
+  }
+  if (aulasSelecionadas.size === 0) {
+    faltando.push('Aula');
+    camposInvalidos.push(document.querySelector('.aula-selector'));
+  }
+
+  if (faltando.length > 0) {
+    camposInvalidos.forEach(el => el?.classList.add('field-invalid'));
+    return mostrarToast(`Campo${faltando.length > 1 ? 's' : ''} faltando: ${faltando.join(', ')}.`, 'error');
   }
   if (/[0-9]/.test(responsavel) || responsavel.length < 3) {
-    return mostrarToast('Nome inválido! Apenas letras, mínimo 3 caracteres.', 'error');
+    responsavelInput.classList.add('field-invalid');
+    return mostrarToast('Nome inválido. Apenas letras, mínimo 3 caracteres.', 'error');
   }
 
   try {
@@ -281,19 +352,25 @@ async function carregarRetiradasAtivas() {
   try {
     const timestamp = new Date().getTime();
     const ativos = await apiGet(`/api/registros/ativos?_=${timestamp}`);
-    
+
     if (!ativos || ativos.length === 0) {
-       container.innerHTML = '<div class="empty-state">✅ Nenhuma retirada ativa no momento.</div>';
+       container.innerHTML = '<div class="empty-state">Nenhuma retirada ativa no momento.</div>';
        return;
     }
-    
+
     container.innerHTML = ativos.map(item => {
       const respEscapado = item.responsavel.replace(/"/g, '&quot;');
       return `
       <div class="registro-item retirada">
         <div class="registro-header">
-          <span class="registro-tipo retirada">⚠️ Em Uso (${item.quantidade})</span>
-          <span class="registro-data">📅 ${formatarDataISO(item.data_hora)}</span>
+          <span class="registro-tipo retirada">
+            <svg class="icon"><use href="#icon-alert"/></svg>
+            Em uso · ${item.quantidade}
+          </span>
+          <span class="registro-data">
+            <svg class="icon"><use href="#icon-clock"/></svg>
+            ${formatarDataISO(item.data_hora)}
+          </span>
         </div>
         <div class="registro-info">
           <span><strong>Equip:</strong> ${item.tipo_nome}</span>
@@ -306,26 +383,33 @@ async function carregarRetiradasAtivas() {
                   data-tipo="${item.tipo_equipamento}"
                   data-qtd="${item.quantidade}"
                   data-resp="${respEscapado}">
-            📥 Devolver Tudo
+            <svg class="icon"><use href="#icon-arrow-in"/></svg>
+            Devolver tudo
           </button>
           <button class="btn btn-parcial btn-devolver-parcial"
                   data-tipo="${item.tipo_equipamento}"
                   data-qtd="${item.quantidade}"
                   data-resp="${respEscapado}">
-            ✂️ Devolver Parcialmente
+            <svg class="icon"><use href="#icon-percent"/></svg>
+            Devolver parte
           </button>
         </div>
         <div class="parcial-form">
           <input type="number" class="input-parcial" min="1" max="${item.quantidade}" placeholder="Qtd (máx. ${item.quantidade})">
-          <button class="btn-confirmar-parcial" data-tipo="${item.tipo_equipamento}" data-resp="${respEscapado}">✔️ Confirmar</button>
-          <button class="btn-cancelar-parcial">✕</button>
+          <button class="btn-confirmar-parcial" data-tipo="${item.tipo_equipamento}" data-resp="${respEscapado}">
+            <svg class="icon"><use href="#icon-check"/></svg>
+            Confirmar
+          </button>
+          <button class="btn-cancelar-parcial">
+            <svg class="icon"><use href="#icon-x"/></svg>
+          </button>
         </div>
       </div>
     `;
     }).join('');
   } catch (err) {
     console.error('Erro ativos:', err);
-    container.innerHTML = '<div class="empty-state">❌ Erro ao carregar retiradas.</div>';
+    container.innerHTML = '<div class="empty-state">Erro ao carregar retiradas.</div>';
   }
 }
 
@@ -344,7 +428,7 @@ async function carregarRegistros() {
 
     if (!registros) {
       console.error('Resposta inesperada de /api/registros:', resposta);
-      container.innerHTML = `<div class="empty-state">❌ A API não retornou uma lista. Resposta: ${JSON.stringify(resposta)}</div>`;
+      container.innerHTML = `<div class="empty-state">A API não retornou uma lista. Resposta: ${JSON.stringify(resposta)}</div>`;
       return;
     }
 
@@ -352,14 +436,18 @@ async function carregarRegistros() {
       container.innerHTML = '<div class="empty-state">Nenhum registro encontrado.</div>';
       return;
     }
-    
+
     container.innerHTML = registros.map(item => `
       <div class="registro-item ${item.tipo_registro}">
         <div class="registro-header">
           <span class="registro-tipo ${item.tipo_registro}">
-            ${item.tipo_registro === 'retirada' ? '📤 Retirada' : '📥 Devolução'}
+            <svg class="icon"><use href="#icon-${item.tipo_registro === 'retirada' ? 'arrow-out' : 'arrow-in'}"/></svg>
+            ${item.tipo_registro === 'retirada' ? 'Retirada' : 'Devolução'}
           </span>
-          <span class="registro-data">📅 ${formatarDataISO(item.data_hora)}</span>
+          <span class="registro-data">
+            <svg class="icon"><use href="#icon-clock"/></svg>
+            ${formatarDataISO(item.data_hora)}
+          </span>
         </div>
         <div class="registro-info">
           <span><strong>Equip:</strong> ${item.tipo_nome}</span>
@@ -372,7 +460,7 @@ async function carregarRegistros() {
     `).join('');
   } catch (err) {
     console.error('Erro ao carregar histórico:', err);
-    container.innerHTML = `<div class="empty-state">❌ Erro ao carregar histórico: ${err.message}</div>`;
+    container.innerHTML = `<div class="empty-state">Erro ao carregar histórico: ${err.message}</div>`;
   }
 }
 
@@ -390,13 +478,13 @@ function limparBusca() {
 }
 
 async function limparHistorico() {
-  if (!confirm('⚠️ Limpar TODO o histórico? Irreversível!')) return;
+  if (!confirm('Limpar TODO o histórico? Esta ação é irreversível.')) return;
   try {
     await apiDelete('/api/registros');
     carregarRegistros();
     carregarRetiradasAtivas();
     carregarInventario();
-    mostrarToast('Histórico limpo!', 'info');
+    mostrarToast('Histórico limpo.', 'info');
   } catch (err) {
     mostrarToast('Erro ao limpar: ' + err.message, 'error');
   }
@@ -409,7 +497,7 @@ function imprimirHistorico() {
   const panel = document.getElementById('panelHistorico');
   const header = document.createElement('div');
   header.className = 'print-header';
-  header.innerHTML = `<h1>E.E. "Luiz Bianconi"</h1> <p><strong>Relatório de Controle de Equipamentos</strong></p> <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>`;
+  header.innerHTML = `<h1>E.E. Luiz Bianconi</h1> <p><strong>Relatório de Controle de Equipamentos</strong></p> <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>`;
   panel.insertBefore(header, panel.firstChild);
   window.print();
   setTimeout(() => header.remove(), 500);
@@ -435,9 +523,9 @@ async function tentarLogin() {
     sessionStorage.setItem('sessaoAdmin', 'true');
     fecharModalLogin();
     verificarSessao();
-    mostrarToast('Bem-vindo, Administrador!', 'success');
+    mostrarToast('Bem-vindo, administrador.', 'success');
   } catch {
-    mostrarToast('Senha incorreta!', 'error');
+    mostrarToast('Senha incorreta.', 'error');
     document.getElementById('senhaAdmin').value = '';
   }
 }
@@ -451,8 +539,8 @@ function logout() {
 function verificarSessao() {
   isAdmin = sessionStorage.getItem('sessaoAdmin') === 'true';
   document.getElementById('panelHistorico').style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('panelLoginAdmin').style.display = isAdmin ? 'none' : 'block';
-  document.getElementById('adminBar').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('adminSlotGuest').style.display = isAdmin ? 'none' : 'flex';
+  document.getElementById('adminSlotUser').style.display = isAdmin ? 'flex' : 'none';
   if (isAdmin) carregarRegistros();
 }
 
@@ -479,13 +567,23 @@ function limparFormulario() {
   document.getElementById('hintDisp').textContent = '';
 }
 
+const TOAST_ICONS = {
+  success: 'icon-check',
+  error: 'icon-alert',
+  info: 'icon-info'
+};
+
 function mostrarToast(msg, tipo = 'info') {
   document.querySelector('.toast')?.remove();
   const t = document.createElement('div');
   t.className = `toast ${tipo}`;
-  t.textContent = msg;
+  const iconId = TOAST_ICONS[tipo] || TOAST_ICONS.info;
+  t.innerHTML = `
+    <span class="toast-icon"><svg class="icon"><use href="#${iconId}"/></svg></span>
+    <span class="toast-msg">${msg}</span>
+  `;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => t.remove(), 4000);
 }
 
 // ==========================================
@@ -508,7 +606,6 @@ function toggleTheme() {
 function atualizarIconeTema(tema) {
   const btn = document.getElementById('themeToggle');
   if (btn) {
-    btn.textContent = tema === 'dark' ? '🌙' : '☀️';
     btn.title = tema === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro';
   }
 }

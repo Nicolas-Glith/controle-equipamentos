@@ -3,15 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle de Equipamentos - E.E. Luiz Bianconi</title>
+  <title>Controle de Equipamentos — E.E. Luiz Bianconi</title>
+  <link rel="icon" type="image/png" href="img/logo_bianconi.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+  <!-- ==========================================
+       SPRITE DE ÍCONES (sem emojis)
+       ========================================== -->
+  <svg class="icon-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="icon-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>
+      </symbol>
+      <symbol id="icon-moon" viewBox="0 0 24 24">
+        <path d="M20 14.2A8.2 8.2 0 1 1 9.8 4a6.3 6.3 0 0 0 10.2 10.2Z"/>
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="3.6"/>
+        <path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>
+      </symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 3.2 19 6v5.4c0 4.7-3 7.9-7 9.4-4-1.5-7-4.7-7-9.4V6Z"/>
+        <path d="M9 12.2l2.1 2.1L15.3 10"/>
+      </symbol>
+      <symbol id="icon-power" viewBox="0 0 24 24">
+        <path d="M12 3.5v7.5"/>
+        <path d="M6.3 6.6a8 8 0 1 0 11.4 0"/>
+      </symbol>
+      <symbol id="icon-laptop" viewBox="0 0 24 24">
+        <rect x="3.5" y="5" width="17" height="10.5" rx="1.2"/>
+        <path d="M2 19h20"/>
+      </symbol>
+      <symbol id="icon-monitor" viewBox="0 0 24 24">
+        <rect x="3.5" y="4" width="17" height="12" rx="1.2"/>
+        <path d="M9 20h6M12 16v4"/>
+      </symbol>
+      <symbol id="icon-tablet" viewBox="0 0 24 24">
+        <rect x="5.5" y="2.5" width="13" height="19" rx="1.8"/>
+        <path d="M12 18.3h.01"/>
+      </symbol>
+      <symbol id="icon-arrow-out" viewBox="0 0 24 24">
+        <path d="M7.5 16.5l9-9"/>
+        <path d="M10 7.5h6.5V14"/>
+      </symbol>
+      <symbol id="icon-arrow-in" viewBox="0 0 24 24">
+        <path d="M16.5 7.5l-9 9"/>
+        <path d="M14 16.5H7.5V10"/>
+      </symbol>
+      <symbol id="icon-package" viewBox="0 0 24 24">
+        <path d="M12 2.5 3.5 7v10L12 21.5 20.5 17V7Z"/>
+        <path d="M3.5 7 12 11.5 20.5 7M12 11.5V21.5"/>
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="6.5"/>
+        <path d="M20.5 20.5L16 16"/>
+      </symbol>
+      <symbol id="icon-x" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="M5 13l4.3 4.3L19 7.5"/>
+      </symbol>
+      <symbol id="icon-printer" viewBox="0 0 24 24">
+        <path d="M6.5 9V3.5h11V9"/>
+        <rect x="3" y="9" width="18" height="7.5" rx="1.2"/>
+        <rect x="6.5" y="14" width="11" height="6.5" rx="0.6"/>
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24">
+        <path d="M4 7h16M9 7V4.3h6V7"/>
+        <path d="M6.3 7l.9 12.2a1.2 1.2 0 0 0 1.2 1.1h7.2a1.2 1.2 0 0 0 1.2-1.1L17.7 7"/>
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7.8v5M12 16h.01"/>
+      </symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v5.3l3.3 2"/>
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24">
+        <rect x="5" y="11" width="14" height="9.5" rx="1.6"/>
+        <path d="M8 11V7.8a4 4 0 0 1 8 0V11"/>
+      </symbol>
+      <symbol id="icon-percent" viewBox="0 0 24 24">
+        <path d="M5 19L19 5"/>
+        <circle cx="7.2" cy="7.2" r="2.2"/>
+        <circle cx="16.8" cy="16.8" r="2.2"/>
+      </symbol>
+      <symbol id="icon-info" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 11v5.5"/>
+        <path d="M12 7.6h.01"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <!-- Modal de Login Admin -->
   <div class="modal-overlay" id="modalLogin" style="display:none;">
     <div class="modal-content">
-      <h2>🔐 Acesso Administrativo</h2>
-      <p>Digite a senha para acessar o histórico.</p>
+      <span class="modal-icon"><svg class="icon"><use href="#icon-lock"/></svg></span>
+      <h2>Acesso administrativo</h2>
+      <p>Digite a senha para gerenciar o histórico do sistema.</p>
       <input type="password" id="senhaAdmin" placeholder="Senha" autocomplete="off">
       <div class="modal-actions">
         <button class="btn btn-cancelar" onclick="fecharModalLogin()">Cancelar</button>
@@ -20,89 +118,190 @@
     </div>
   </div>
 
-  <div class="container">
-    <header>
-      <h1>📋 Controle de Equipamentos</h1>
-      <p class="subtitle">E.E. "Luiz Bianconi"</p>
-      <button id="themeToggle" onclick="toggleTheme()" title="Alternar tema">☀️</button>
-      <div class="admin-bar" id="adminBar" style="display:none;">
-        <span class="badge-admin">👑 Modo Administrador</span>
-        <button class="btn-logout" onclick="logout()">Sair</button>
+  <div class="app-shell">
+    <!-- ========================================== -->
+    <!-- HEADER -->
+    <!-- ========================================== -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-mark">
+            <img src="img/logo_bianconi.png" alt="Brasão da E.E. Luiz Bianconi" width="36" height="36">
+          </span>
+          <div class="brand-text">
+            <strong>E.E. Luiz Bianconi</strong>
+            <span>Controle de Equipamentos</span>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema">
+            <svg class="icon icon-theme-sun"><use href="#icon-sun"/></svg>
+            <svg class="icon icon-theme-moon"><use href="#icon-moon"/></svg>
+          </button>
+
+          <div class="admin-slot" id="adminSlotGuest">
+            <button class="btn-ghost" onclick="abrirModalLogin()">
+              <svg class="icon"><use href="#icon-user"/></svg>
+              <span>Entrar como admin</span>
+            </button>
+          </div>
+
+          <div class="admin-slot" id="adminSlotUser" style="display:none;">
+            <span class="admin-chip">
+              <svg class="icon"><use href="#icon-shield"/></svg>
+              Admin
+            </span>
+            <button class="icon-btn icon-btn-danger" onclick="logout()" title="Sair" aria-label="Sair">
+              <svg class="icon"><use href="#icon-power"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
-    <main>
-      <!-- Grid Principal: Inventário + Formulário lado a lado -->
-      <div class="grid-principal">
-        <!-- Painel de Inventário -->
-        <section class="panel panel-inventario">
-          <h2>📦 Inventário</h2>
-          <div class="inventario-grid">
-            <div class="inventario-item chromebook">
-              <div class="inv-nome">Chromebook</div>
-              <div class="inv-numeros">
-                <span class="inv-disp" id="dispChromebook">22</span>
-                <span class="inv-sep">/</span>
-                <span class="inv-total">22</span>
-              </div>
+    <!-- ========================================== -->
+    <!-- HERO / BANNER DE TÍTULO -->
+    <!-- ========================================== -->
+    <section class="hero-banner">
+      <img class="hero-watermark hero-watermark-back" src="img/logo_bianconi.png" alt="" aria-hidden="true">
+      <div class="hero-inner">
+        <span class="hero-eyebrow">Sistema de patrimônio escolar</span>
+        <h1>Controle de Equipamentos</h1>
+        <p>Professores, registrem aqui a retirada e a devolução de Chromebooks, notebooks Positivo e tablets.</p>
+      </div>
+    </section>
+
+    <main class="app-main">
+      <!-- ========================================== -->
+      <!-- INVENTÁRIO (HORIZONTAL) -->
+      <!-- ========================================== -->
+      <section class="inventory-strip" aria-label="Inventário disponível">
+        <div class="section-head">
+          <svg class="icon section-head-icon"><use href="#icon-package"/></svg>
+          <div>
+            <h2>Inventário</h2>
+            <p>Disponibilidade em tempo real</p>
+          </div>
+        </div>
+
+        <div class="inventory-row">
+          <article class="inv-card">
+            <div class="inv-card-top">
+              <svg class="icon"><use href="#icon-laptop"/></svg>
+              <span class="inv-card-nome">Chromebook</span>
+              <span class="info-trigger">
+                <button type="button" class="info-icon" aria-label="Ver foto do Chromebook">
+                  <svg class="icon"><use href="#icon-info"/></svg>
+                </button>
+                <span class="info-popover">
+                  <img src="img/chromebook_sem_fundo.png" alt="Foto do Chromebook">
+                  <span class="info-popover-caption">Identifique pelo modelo real acima</span>
+                </span>
+              </span>
             </div>
-            <div class="inventario-item positivo">
-              <div class="inv-nome">Positivo</div>
-              <div class="inv-numeros">
-                <span class="inv-disp" id="dispPositivo">36</span>
-                <span class="inv-sep">/</span>
-                <span class="inv-total">36</span>
-              </div>
+            <div class="inv-card-numeros">
+              <span class="inv-disp" id="dispChromebook">22</span>
+              <span class="inv-sep">/</span>
+              <span class="inv-total" id="totalChromebook">22</span>
             </div>
-            <div class="inventario-item tablet">
-              <div class="inv-nome">Tablet</div>
-              <div class="inv-numeros">
-                <span class="inv-disp" id="dispTablet">44</span>
-                <span class="inv-sep">/</span>
-                <span class="inv-total">44</span>
-              </div>
+            <div class="inv-bar"><span class="inv-bar-fill" id="barChromebook" style="width:100%"></span></div>
+          </article>
+
+          <article class="inv-card">
+            <div class="inv-card-top">
+              <svg class="icon"><use href="#icon-monitor"/></svg>
+              <span class="inv-card-nome">Positivo</span>
+              <span class="info-trigger">
+                <button type="button" class="info-icon" aria-label="Ver foto do Positivo">
+                  <svg class="icon"><use href="#icon-info"/></svg>
+                </button>
+                <span class="info-popover">
+                  <img src="img/Positivo.png" alt="Foto do notebook Positivo">
+                  <span class="info-popover-caption">Identifique pelo modelo real acima</span>
+                </span>
+              </span>
+            </div>
+            <div class="inv-card-numeros">
+              <span class="inv-disp" id="dispPositivo">36</span>
+              <span class="inv-sep">/</span>
+              <span class="inv-total" id="totalPositivo">36</span>
+            </div>
+            <div class="inv-bar"><span class="inv-bar-fill" id="barPositivo" style="width:100%"></span></div>
+          </article>
+
+          <article class="inv-card">
+            <div class="inv-card-top">
+              <svg class="icon"><use href="#icon-tablet"/></svg>
+              <span class="inv-card-nome">Tablet</span>
+              <span class="info-trigger">
+                <button type="button" class="info-icon" aria-label="Ver foto do Tablet">
+                  <svg class="icon"><use href="#icon-info"/></svg>
+                </button>
+                <span class="info-popover">
+                  <img src="img/tablet_transparent.png" alt="Foto do Tablet">
+                  <span class="info-popover-caption">Identifique pelo modelo real acima</span>
+                </span>
+              </span>
+            </div>
+            <div class="inv-card-numeros">
+              <span class="inv-disp" id="dispTablet">44</span>
+              <span class="inv-sep">/</span>
+              <span class="inv-total" id="totalTablet">44</span>
+            </div>
+            <div class="inv-bar"><span class="inv-bar-fill" id="barTablet" style="width:100%"></span></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- RETIRADA + DEVOLUÇÃO -->
+      <!-- ========================================== -->
+      <div class="grid-acoes">
+        <!-- RETIRADA -->
+        <section class="panel panel-retirada" id="panelRegistro">
+          <div class="panel-head">
+            <span class="panel-icon"><svg class="icon"><use href="#icon-arrow-out"/></svg></span>
+            <div>
+              <h2>Retirada</h2>
+              <p>Registre a saída de um equipamento</p>
             </div>
           </div>
-        </section>
 
-        <!-- Painel de Retirada -->
-        <section class="panel panel-registro panel-retirada-box" id="panelRegistro">
-          <h2>📤 Nova Retirada</h2>
-          
           <div class="form-group">
-            <label>Tipo de Equipamento:</label>
+            <label>Equipamento</label>
             <div class="tipo-selector">
-              <button class="tipo-btn" data-tipo="1">1 - Chromebook</button>
-              <button class="tipo-btn" data-tipo="2">2 - Positivo</button>
-              <button class="tipo-btn" data-tipo="3">3 - Tablet</button>
+              <button class="tipo-btn" data-tipo="1"><svg class="icon"><use href="#icon-laptop"/></svg>Chromebook</button>
+              <button class="tipo-btn" data-tipo="2"><svg class="icon"><use href="#icon-monitor"/></svg>Positivo</button>
+              <button class="tipo-btn" data-tipo="3"><svg class="icon"><use href="#icon-tablet"/></svg>Tablet</button>
             </div>
             <input type="hidden" id="tipoEquipamento" required>
           </div>
 
           <div class="form-row">
             <div class="form-group half">
-              <label for="quantidade">Quantidade:</label>
+              <label for="quantidade">Quantidade</label>
               <input type="number" id="quantidade" min="1" placeholder="Ex: 20" required>
               <span class="hint-disp" id="hintDisp"></span>
             </div>
             <div class="form-group half">
-              <label for="responsavel">Professor Responsável:</label>
+              <label for="responsavel">Professor responsável</label>
               <input type="text" id="responsavel" placeholder="Nome completo" required>
             </div>
           </div>
 
           <div class="form-group">
-            <label>Período:</label>
+            <label>Período</label>
             <div class="periodo-selector">
-              <button class="periodo-btn" data-periodo="manha">☀️ Manhã</button>
-              <button class="periodo-btn" data-periodo="tarde">🌤️ Tarde</button>
-              <button class="periodo-btn" data-periodo="noite">🌙 Noite</button>
+              <button class="periodo-btn" data-periodo="manha">Manhã</button>
+              <button class="periodo-btn" data-periodo="tarde">Tarde</button>
+              <button class="periodo-btn" data-periodo="noite">Noite</button>
             </div>
             <input type="hidden" id="periodo" required>
           </div>
 
           <div class="form-group">
-            <label>Aulas (pode selecionar mais de uma):</label>
+            <label>Aulas <span class="label-hint">selecione uma ou mais</span></label>
             <div class="aula-selector">
               <button class="aula-btn" data-aula="1">1ª</button>
               <button class="aula-btn" data-aula="2">2ª</button>
@@ -114,37 +313,48 @@
             <input type="hidden" id="aula" required>
           </div>
 
-          <div class="actions">
-            <button class="btn btn-retirada btn-retirada-full" onclick="registrarRetirada()">
-              📤 Registrar RETIRADA
-            </button>
+          <button class="btn btn-retirada" onclick="registrarRetirada()">
+            Registrar retirada
+          </button>
+        </section>
+
+        <!-- DEVOLUÇÃO -->
+        <section class="panel panel-devolucao" id="panelAtivos">
+          <div class="panel-head">
+            <span class="panel-icon"><svg class="icon"><use href="#icon-arrow-in"/></svg></span>
+            <div>
+              <h2>Devolução</h2>
+              <p>Equipamentos em uso aguardando devolução</p>
+            </div>
           </div>
+          <div class="registros-lista" id="listaAtivos"></div>
         </section>
       </div>
 
-      <!-- Painel de Devolução (Retiradas Ativas) -->
-      <section class="panel panel-devolucao-box" id="panelAtivos">
-        <h2>📥 Devolução de Equipamentos</h2>
-        <p class="panel-subtitulo">Equipamentos em uso aguardando devolução. Devolva tudo de uma vez ou apenas parte da quantidade.</p>
-        <div class="registros-lista" id="listaAtivos"></div>
-      </section>
-
-      <!-- Painel de Histórico (Só para Admin) -->
+      <!-- ========================================== -->
+      <!-- HISTÓRICO (SÓ ADMIN) -->
+      <!-- ========================================== -->
       <section class="panel panel-admin" id="panelHistorico" style="display:none;">
         <div class="panel-header-flex">
-          <h2>📜 Histórico de Registros</h2>
-          <div class="admin-actions">
-            <span class="badge-admin">Admin</span>
-            <button class="btn btn-imprimir" onclick="imprimirHistorico()">
-              🖨️ Imprimir / PDF
-            </button>
+          <div class="panel-head panel-head-plain">
+            <span class="panel-icon"><svg class="icon"><use href="#icon-clock"/></svg></span>
+            <div>
+              <h2>Histórico de registros</h2>
+              <p>Auditoria completa de retiradas e devoluções</p>
+            </div>
           </div>
+          <button class="btn btn-imprimir" onclick="imprimirHistorico()">
+            <svg class="icon"><use href="#icon-printer"/></svg>
+            Imprimir / PDF
+          </button>
         </div>
 
-        <!-- Barra de Pesquisa -->
         <div class="search-bar">
-          <input type="text" id="buscaHistorico" placeholder="🔍 Pesquisar por nome, equipamento, data (ex: 04/07/2026)...">
-          <button class="btn-limpar-busca" onclick="limparBusca()" title="Limpar busca">✕</button>
+          <svg class="icon search-bar-icon"><use href="#icon-search"/></svg>
+          <input type="text" id="buscaHistorico" placeholder="Pesquisar por nome, equipamento, data (ex: 04/07/2026)...">
+          <button class="btn-limpar-busca" onclick="limparBusca()" title="Limpar busca">
+            <svg class="icon"><use href="#icon-x"/></svg>
+          </button>
         </div>
 
         <div class="filtros">
@@ -154,22 +364,34 @@
           <button class="filtro-btn" data-filtro="hoje">Hoje</button>
         </div>
         <div class="registros-lista" id="listaHistorico"></div>
-        <button class="btn btn-limpar" onclick="limparHistorico()">🗑️ Limpar Histórico</button>
+        <button class="btn btn-limpar" onclick="limparHistorico()">
+          <svg class="icon"><use href="#icon-trash"/></svg>
+          Limpar histórico
+        </button>
       </section>
-
-      <!-- Botão para Admin acessar histórico -->
-      <section class="panel" id="panelLoginAdmin" style="text-align:center;">
-        <h2>🔒 Área Administrativa</h2>
-        <p>Apenas administradores podem visualizar o histórico completo.</p>
-        <button class="btn btn-admin" onclick="abrirModalLogin()">🔑 Acessar como Administrador</button>
-      </section>
-
-
     </main>
 
-    <footer>
-      <p>© 2026 - Sistema de Controle de Equipamentos</p>
-      <p>Desenvolvido Por: Nicolas Gabriel Castro Khouri e Matheus Dantas Grigorio</p>
+    <footer class="app-footer">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <span class="brand-mark footer-brand-mark">
+            <img src="img/logo_bianconi.png" alt="Brasão da E.E. Luiz Bianconi" width="26" height="26">
+          </span>
+          <div class="brand-text">
+            <strong>E.E. Luiz Bianconi</strong>
+            <span>Controle de Equipamentos</span>
+          </div>
+        </div>
+        <p class="footer-note">
+          <svg class="icon"><use href="#icon-shield"/></svg>
+          Uso interno — professores e equipe administrativa
+        </p>
+      </div>
+      <div class="footer-divider"></div>
+      <div class="footer-bottom">
+        <p>© 2026 Sistema de Controle de Equipamentos</p>
+        <p>Desenvolvido por Nicolas Gabriel Castro Khouri e Matheus Dantas Grigorio</p>
+      </div>
     </footer>
   </div>
 
