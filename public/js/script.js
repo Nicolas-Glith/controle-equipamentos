@@ -70,6 +70,17 @@ function inicializarEventos() {
     this.classList.remove('field-invalid');
   });
 
+  document.addEventListener('DOMContentLoaded', () => {
+  aplicarTema();
+  inicializarEventos();
+  verificarSessao();
+  carregarInventario();
+  carregarRetiradasAtivas();
+
+  // 🔄 Auto-atualização a cada 3 minutos
+  setInterval(atualizarTelaCompleta, 3 * 60 * 1000); // 180000ms = 3 min
+});
+
   // Busca
   const inputBusca = document.getElementById('buscaHistorico');
   if (inputBusca) {
