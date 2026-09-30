@@ -23,10 +23,30 @@ const EQUIP_MAP = {
   3: { disp: 'dispTablet', total: 'totalTablet', bar: 'barTablet' }
 };
 
+const REFRESH_MS = 60 * 1000; // auto-atualização a cada 1 minuto
+
 let filtroAtual = 'todos';
 let termoBusca = '';
 let isAdmin = false;
 let aulasSelecionadas = new Set();
+
+// Estoque vindo do banco: { 1: {disp, total}, 2: {...}, 3: {...} }
+let estoque = {};
+let estoqueOk = false;       // true só quando a última consulta ao banco deu certo
+let avisoEstoqueMostrado = false;
+let enviando = false;        // evita duplo clique no envio
+
+// ==========================================
+// UTILIDADES
+// ==========================================
+function esc(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ==========================================
 // INICIALIZAÇÃO
@@ -35,8 +55,15 @@ document.addEventListener('DOMContentLoaded', () => {
   aplicarTema();
   inicializarEventos();
   verificarSessao();
-  carregarInventario();
-  carregarRetiradasAtivas();
+  atualizarTelaCompleta();
+
+  // Auto-atualização periódica
+  setInterval(atualizarTelaCompleta, REFRESH_MS);
+
+  // Ao voltar para a aba, atualiza na hora
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) atualizarTelaCompleta();
+  });
 });
 
 function inicializarEventos() {
@@ -55,31 +82,20 @@ function inicializarEventos() {
 
   // Validação de nome sem números
   const inputResp = document.getElementById('responsavel');
-  inputResp.addEventListener('input', function() {
+  inputResp.addEventListener('input', function () {
     this.value = this.value.replace(/[0-9]/g, '');
     this.classList.remove('field-invalid');
   });
-  inputResp.addEventListener('keypress', function(e) {
+  inputResp.addEventListener('keypress', function (e) {
     if (/[0-9]/.test(e.key)) {
       e.preventDefault();
       mostrarToast('Números não são permitidos no nome.', 'error');
     }
   });
 
-  document.getElementById('quantidade')?.addEventListener('input', function() {
+  document.getElementById('quantidade')?.addEventListener('input', function () {
     this.classList.remove('field-invalid');
   });
-
-  document.addEventListener('DOMContentLoaded', () => {
-  aplicarTema();
-  inicializarEventos();
-  verificarSessao();
-  carregarInventario();
-  carregarRetiradasAtivas();
-
-  // 🔄 Auto-atualização a cada 3 minutos
-  setInterval(atualizarTelaCompleta, 3 * 60 * 1000); // 180000ms = 3 min
-});
 
   // Busca
   const inputBusca = document.getElementById('buscaHistorico');
@@ -94,7 +110,7 @@ function inicializarEventos() {
     });
   }
 
-  // Enter
+  // Enter no login
   document.getElementById('senhaAdmin')?.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') tentarLogin();
   });
@@ -105,10 +121,7 @@ function inicializarEventos() {
     listaAtivos.addEventListener('click', (e) => {
       const btnTudo = e.target.closest('.btn-devolver-tudo');
       if (btnTudo) {
-        const tipo = btnTudo.dataset.tipo;
-        const qtd = btnTudo.dataset.qtd;
-        const resp = btnTudo.dataset.resp;
-        devolucaoRapida(tipo, qtd, resp);
+        devolucaoRapida(btnTudo.dataset.tipo, btnTudo.dataset.qtd, btnTudo.dataset.resp);
         return;
       }
 
@@ -146,9 +159,7 @@ function inicializarEventos() {
           return mostrarToast(`Quantidade maior que o disponível para devolução (${max}).`, 'error');
         }
 
-        const tipo = btnConfirmar.dataset.tipo;
-        const resp = btnConfirmar.dataset.resp;
-        devolucaoRapida(tipo, valor, resp);
+        devolucaoRapida(btnConfirmar.dataset.tipo, valor, btnConfirmar.dataset.resp);
         form.style.display = 'none';
       }
     });
@@ -156,47 +167,96 @@ function inicializarEventos() {
 }
 
 // ==========================================
-// CHAMADAS À API (SEM QUEBRAS DE LINHA)
+// CHAMADAS À API
 // ==========================================
-async function apiGet(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+function tokenAdmin() {
+  return sessionStorage.getItem('tokenAdmin');
 }
 
-async function apiPost(endpoint, body) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+async function apiFetch(endpoint, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = tokenAdmin();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* resposta sem JSON */
+  }
+
+  if (!res.ok) {
+    // Sessão de admin expirada ou inválida
+    if (res.status === 401 && token) {
+      sessionStorage.removeItem('tokenAdmin');
+      verificarSessao();
+      throw new Error('Sessão expirada. Entre novamente como administrador.');
+    }
+    throw new Error((data && data.error) || `Erro ${res.status} ao acessar o servidor.`);
+  }
+  return data;
+}
+
+function apiGet(endpoint) {
+  return apiFetch(endpoint);
+}
+
+function apiPost(endpoint, body) {
+  return apiFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erro na requisição');
-  return data;
 }
 
-async function apiDelete(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+function apiDelete(endpoint) {
+  return apiFetch(endpoint, { method: 'DELETE' });
 }
 
 // ==========================================
-// INVENTÁRIO
+// INVENTÁRIO (sempre vindo do banco)
 // ==========================================
+function mostrarEstoqueIndisponivel() {
+  Object.values(EQUIP_MAP).forEach(ids => {
+    const dispEl = document.getElementById(ids.disp);
+    const totalEl = document.getElementById(ids.total);
+    const barEl = document.getElementById(ids.bar);
+    if (dispEl) dispEl.textContent = '–';
+    if (totalEl) totalEl.textContent = '–';
+    if (barEl) {
+      barEl.style.width = '0%';
+      barEl.classList.remove('status-low');
+      barEl.classList.add('status-empty');
+    }
+  });
+  const hint = document.getElementById('hintDisp');
+  if (hint) hint.textContent = 'Estoque indisponível no momento.';
+}
+
 async function carregarInventario() {
   try {
-    const dados = await apiGet('/api/inventario');
+    const dados = await apiGet(`/api/inventario?_=${Date.now()}`);
+    if (!Array.isArray(dados)) throw new Error('Resposta inesperada do servidor.');
+
+    const novo = {};
     dados.forEach(item => {
-      const ids = EQUIP_MAP[item.tipo_codigo];
+      const tipo = Number(item.tipo_codigo);
+      const ids = EQUIP_MAP[tipo];
       if (!ids) return;
+
+      const total = Number(item.quantidade_total);
+      let disponivel = Number(item.disponivel);
+      if (disponivel < 0 || disponivel > total) {
+        console.warn('Estoque inconsistente no banco para o tipo', tipo, item);
+        disponivel = Math.max(0, Math.min(total, disponivel));
+      }
+      novo[tipo] = { disp: disponivel, total };
 
       const dispEl = document.getElementById(ids.disp);
       const totalEl = document.getElementById(ids.total);
       const barEl = document.getElementById(ids.bar);
-
-      const disponivel = Number(item.disponivel);
-      const total = Number(item.quantidade_total);
 
       if (dispEl) dispEl.textContent = disponivel;
       if (totalEl) totalEl.textContent = total;
@@ -205,29 +265,41 @@ async function carregarInventario() {
         const pct = total > 0 ? Math.max(0, Math.min(100, (disponivel / total) * 100)) : 0;
         barEl.style.width = `${pct}%`;
         barEl.classList.remove('status-low', 'status-empty');
-        if (pct === 0) {
-          barEl.classList.add('status-empty');
-        } else if (pct <= 30) {
-          barEl.classList.add('status-low');
-        }
+        if (pct === 0) barEl.classList.add('status-empty');
+        else if (pct <= 30) barEl.classList.add('status-low');
       }
     });
+
+    estoque = novo;
+    estoqueOk = true;
+    avisoEstoqueMostrado = false;
+
+    // Atualiza o texto/limite do campo quantidade se um equipamento já estiver selecionado
+    const tipoSel = document.getElementById('tipoEquipamento').value;
+    if (tipoSel) atualizarHintDisponivel(tipoSel);
   } catch (err) {
     console.error('Erro ao carregar inventário:', err);
+    estoqueOk = false;
+    estoque = {};
+    mostrarEstoqueIndisponivel();
+    if (!avisoEstoqueMostrado) {
+      avisoEstoqueMostrado = true;
+      mostrarToast('Não foi possível carregar o estoque do servidor. Tentando novamente...', 'error');
+    }
   }
 }
 
 function atualizarHintDisponivel(tipo) {
-  const ids = EQUIP_MAP[tipo];
-  if (!ids) return;
-  const dispEl = document.getElementById(ids.disp);
-  const totalEl = document.getElementById(ids.total);
-  if (dispEl && totalEl) {
-    const disp = parseInt(dispEl.textContent) || 0;
-    const total = parseInt(totalEl.textContent) || 0;
-    document.getElementById('hintDisp').textContent = `Disponível: ${disp} de ${total} ${TIPOS_EQUIPAMENTO[tipo]}`;
-    document.getElementById('quantidade').max = disp;
+  const hint = document.getElementById('hintDisp');
+  const qtdInput = document.getElementById('quantidade');
+  const info = estoque[tipo];
+  if (!info) {
+    hint.textContent = 'Estoque indisponível no momento.';
+    qtdInput.removeAttribute('max');
+    return;
   }
+  hint.textContent = `Disponível: ${info.disp} de ${info.total} ${TIPOS_EQUIPAMENTO[tipo]}`;
+  qtdInput.max = info.disp;
 }
 
 // ==========================================
@@ -268,26 +340,33 @@ function limparCamposInvalidos() {
 }
 
 // ==========================================
-// REGISTRAR RETIRADA / DEVOLUÇÃO
+// ATUALIZAÇÃO GERAL DA TELA
 // ==========================================
 async function atualizarTelaCompleta() {
   try {
-    await carregarInventario();
-    await carregarRetiradasAtivas();
+    await Promise.all([carregarInventario(), carregarRetiradasAtivas()]);
     if (isAdmin) await carregarRegistros();
   } catch (err) {
     console.error('Erro ao atualizar tela:', err);
   }
 }
 
+// ==========================================
+// REGISTRAR RETIRADA / DEVOLUÇÃO
+// ==========================================
 async function registrarRetirada() {
+  if (enviando) return;
+
   const tipo = document.getElementById('tipoEquipamento').value;
   const quantidadeInput = document.getElementById('quantidade');
   const quantidade = parseInt(quantidadeInput.value);
   const responsavelInput = document.getElementById('responsavel');
-  const responsavel = responsavelInput.value.trim();
+  const responsavel = responsavelInput.value.trim().replace(/\s+/g, ' ');
   const periodo = document.getElementById('periodo').value;
-  const aulas = Array.from(aulasSelecionadas).map(a => AULAS[a]).join(', ');
+  const aulas = Array.from(aulasSelecionadas)
+    .sort()
+    .map(a => AULAS[a])
+    .join(', ');
 
   limparCamposInvalidos();
 
@@ -324,7 +403,25 @@ async function registrarRetirada() {
     return mostrarToast('Nome inválido. Apenas letras, mínimo 3 caracteres.', 'error');
   }
 
+  enviando = true;
   try {
+    // Consulta o estoque atual no banco ANTES de enviar
+    await carregarInventario();
+    if (!estoqueOk || !estoque[tipo]) {
+      return mostrarToast('Não foi possível consultar o estoque agora. Tente novamente em instantes.', 'error');
+    }
+    const disp = estoque[tipo].disp;
+    if (quantidade > disp) {
+      quantidadeInput.classList.add('field-invalid');
+      return mostrarToast(
+        disp === 0
+          ? `Não há ${TIPOS_EQUIPAMENTO[tipo]} disponível no momento.`
+          : `Só há ${disp} ${TIPOS_EQUIPAMENTO[tipo]}(s) disponível(is).`,
+        'error'
+      );
+    }
+
+    // O servidor valida de novo (é ele quem garante o limite)
     await apiPost('/api/registros', {
       tipo_equipamento: parseInt(tipo),
       tipo_registro: 'retirada',
@@ -338,10 +435,15 @@ async function registrarRetirada() {
     await atualizarTelaCompleta();
   } catch (err) {
     mostrarToast(err.message, 'error');
+    atualizarTelaCompleta(); // mostra o número real do banco
+  } finally {
+    enviando = false;
   }
 }
 
 async function devolucaoRapida(tipo, quantidade, responsavel) {
+  if (enviando) return;
+  enviando = true;
   try {
     await apiPost('/api/registros', {
       tipo_equipamento: parseInt(tipo),
@@ -355,59 +457,59 @@ async function devolucaoRapida(tipo, quantidade, responsavel) {
     await atualizarTelaCompleta();
   } catch (err) {
     mostrarToast(err.message, 'error');
+    atualizarTelaCompleta();
+  } finally {
+    enviando = false;
   }
 }
 
 async function carregarRetiradasAtivas() {
   const container = document.getElementById('listaAtivos');
   try {
-    const timestamp = new Date().getTime();
-    const ativos = await apiGet(`/api/registros/ativos?_=${timestamp}`);
+    const ativos = await apiGet(`/api/registros/ativos?_=${Date.now()}`);
 
-    if (!ativos || ativos.length === 0) {
-       container.innerHTML = '<div class="empty-state">Nenhuma retirada ativa no momento.</div>';
-       return;
+    if (!Array.isArray(ativos) || ativos.length === 0) {
+      container.innerHTML = '<div class="empty-state">Nenhuma retirada ativa no momento.</div>';
+      return;
     }
 
-    container.innerHTML = ativos.map(item => {
-      const respEscapado = item.responsavel.replace(/"/g, '&quot;');
-      return `
+    container.innerHTML = ativos.map(item => `
       <div class="registro-item retirada">
         <div class="registro-header">
           <span class="registro-tipo retirada">
             <svg class="icon"><use href="#icon-alert"/></svg>
-            Em uso · ${item.quantidade}
+            Em uso · ${esc(item.quantidade)}
           </span>
           <span class="registro-data">
             <svg class="icon"><use href="#icon-clock"/></svg>
-            ${formatarDataISO(item.data_hora)}
+            ${esc(formatarDataISO(item.data_hora))}
           </span>
         </div>
         <div class="registro-info">
-          <span><strong>Equip:</strong> ${item.tipo_nome}</span>
-          <span><strong>Resp:</strong> ${item.responsavel}</span>
-          <span><strong>Período:</strong> ${item.periodo}</span>
-          <span><strong>Aula:</strong> ${item.aula}</span>
+          <span><strong>Equip:</strong> ${esc(item.tipo_nome)}</span>
+          <span><strong>Resp:</strong> ${esc(item.responsavel)}</span>
+          <span><strong>Período:</strong> ${esc(item.periodo)}</span>
+          <span><strong>Aula:</strong> ${esc(item.aula)}</span>
         </div>
         <div class="registro-actions">
           <button class="btn btn-devolucao btn-devolver-tudo"
-                  data-tipo="${item.tipo_equipamento}"
-                  data-qtd="${item.quantidade}"
-                  data-resp="${respEscapado}">
+                  data-tipo="${esc(item.tipo_equipamento)}"
+                  data-qtd="${esc(item.quantidade)}"
+                  data-resp="${esc(item.responsavel)}">
             <svg class="icon"><use href="#icon-arrow-in"/></svg>
             Devolver tudo
           </button>
           <button class="btn btn-parcial btn-devolver-parcial"
-                  data-tipo="${item.tipo_equipamento}"
-                  data-qtd="${item.quantidade}"
-                  data-resp="${respEscapado}">
+                  data-tipo="${esc(item.tipo_equipamento)}"
+                  data-qtd="${esc(item.quantidade)}"
+                  data-resp="${esc(item.responsavel)}">
             <svg class="icon"><use href="#icon-percent"/></svg>
             Devolver parte
           </button>
         </div>
         <div class="parcial-form">
-          <input type="number" class="input-parcial" min="1" max="${item.quantidade}" placeholder="Qtd (máx. ${item.quantidade})">
-          <button class="btn-confirmar-parcial" data-tipo="${item.tipo_equipamento}" data-resp="${respEscapado}">
+          <input type="number" class="input-parcial" min="1" max="${esc(item.quantidade)}" placeholder="Qtd (máx. ${esc(item.quantidade)})">
+          <button class="btn-confirmar-parcial" data-tipo="${esc(item.tipo_equipamento)}" data-resp="${esc(item.responsavel)}">
             <svg class="icon"><use href="#icon-check"/></svg>
             Confirmar
           </button>
@@ -416,8 +518,7 @@ async function carregarRetiradasAtivas() {
           </button>
         </div>
       </div>
-    `;
-    }).join('');
+    `).join('');
   } catch (err) {
     console.error('Erro ativos:', err);
     container.innerHTML = '<div class="empty-state">Erro ao carregar retiradas.</div>';
@@ -439,7 +540,7 @@ async function carregarRegistros() {
 
     if (!registros) {
       console.error('Resposta inesperada de /api/registros:', resposta);
-      container.innerHTML = `<div class="empty-state">A API não retornou uma lista. Resposta: ${JSON.stringify(resposta)}</div>`;
+      container.innerHTML = '<div class="empty-state">A API não retornou uma lista de registros.</div>';
       return;
     }
 
@@ -449,29 +550,29 @@ async function carregarRegistros() {
     }
 
     container.innerHTML = registros.map(item => `
-      <div class="registro-item ${item.tipo_registro}">
+      <div class="registro-item ${item.tipo_registro === 'retirada' ? 'retirada' : 'devolucao'}">
         <div class="registro-header">
-          <span class="registro-tipo ${item.tipo_registro}">
+          <span class="registro-tipo ${item.tipo_registro === 'retirada' ? 'retirada' : 'devolucao'}">
             <svg class="icon"><use href="#icon-${item.tipo_registro === 'retirada' ? 'arrow-out' : 'arrow-in'}"/></svg>
             ${item.tipo_registro === 'retirada' ? 'Retirada' : 'Devolução'}
           </span>
           <span class="registro-data">
             <svg class="icon"><use href="#icon-clock"/></svg>
-            ${formatarDataISO(item.data_hora)}
+            ${esc(formatarDataISO(item.data_hora))}
           </span>
         </div>
         <div class="registro-info">
-          <span><strong>Equip:</strong> ${item.tipo_nome}</span>
-          <span><strong>Qtd:</strong> ${item.quantidade}</span>
-          <span><strong>Resp:</strong> ${item.responsavel}</span>
-          <span><strong>Período:</strong> ${item.periodo}</span>
-          <span><strong>Aula:</strong> ${item.aula}</span>
+          <span><strong>Equip:</strong> ${esc(item.tipo_nome)}</span>
+          <span><strong>Qtd:</strong> ${esc(item.quantidade)}</span>
+          <span><strong>Resp:</strong> ${esc(item.responsavel)}</span>
+          <span><strong>Período:</strong> ${esc(item.periodo)}</span>
+          <span><strong>Aula:</strong> ${esc(item.aula)}</span>
         </div>
       </div>
     `).join('');
   } catch (err) {
     console.error('Erro ao carregar histórico:', err);
-    container.innerHTML = `<div class="empty-state">Erro ao carregar histórico: ${err.message}</div>`;
+    container.innerHTML = `<div class="empty-state">Erro ao carregar histórico: ${esc(err.message)}</div>`;
   }
 }
 
@@ -492,10 +593,8 @@ async function limparHistorico() {
   if (!confirm('Limpar TODO o histórico? Esta ação é irreversível.')) return;
   try {
     await apiDelete('/api/registros');
-    carregarRegistros();
-    carregarRetiradasAtivas();
-    carregarInventario();
     mostrarToast('Histórico limpo.', 'info');
+    await atualizarTelaCompleta();
   } catch (err) {
     mostrarToast('Erro ao limpar: ' + err.message, 'error');
   }
@@ -508,7 +607,7 @@ function imprimirHistorico() {
   const panel = document.getElementById('panelHistorico');
   const header = document.createElement('div');
   header.className = 'print-header';
-  header.innerHTML = `<h1>E.E. Luiz Bianconi</h1> <p><strong>Relatório de Controle de Equipamentos</strong></p> <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>`;
+  header.innerHTML = `<h1>E.E. Luiz Bianconi</h1> <p><strong>Relatório de Controle de Equipamentos</strong></p> <p>Gerado em: ${esc(new Date().toLocaleString('pt-BR'))}</p>`;
   panel.insertBefore(header, panel.firstChild);
   window.print();
   setTimeout(() => header.remove(), 500);
@@ -530,25 +629,26 @@ function fecharModalLogin() {
 async function tentarLogin() {
   const senha = document.getElementById('senhaAdmin').value;
   try {
-    await apiPost('/api/login', { senha });
-    sessionStorage.setItem('sessaoAdmin', 'true');
+    const resp = await apiPost('/api/login', { senha });
+    if (!resp.token) throw new Error('Login sem token.');
+    sessionStorage.setItem('tokenAdmin', resp.token);
     fecharModalLogin();
     verificarSessao();
     mostrarToast('Bem-vindo, administrador.', 'success');
-  } catch {
-    mostrarToast('Senha incorreta.', 'error');
+  } catch (err) {
+    mostrarToast(err.message || 'Senha incorreta.', 'error');
     document.getElementById('senhaAdmin').value = '';
   }
 }
 
 function logout() {
-  sessionStorage.removeItem('sessaoAdmin');
+  sessionStorage.removeItem('tokenAdmin');
   verificarSessao();
   mostrarToast('Sessão encerrada.', 'info');
 }
 
 function verificarSessao() {
-  isAdmin = sessionStorage.getItem('sessaoAdmin') === 'true';
+  isAdmin = !!tokenAdmin();
   document.getElementById('panelHistorico').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('adminSlotGuest').style.display = isAdmin ? 'none' : 'flex';
   document.getElementById('adminSlotUser').style.display = isAdmin ? 'flex' : 'none';
@@ -572,10 +672,11 @@ function formatarDataISO(isoString) {
 function limparFormulario() {
   document.querySelectorAll('.tipo-btn,.periodo-btn,.aula-btn').forEach(b => b.classList.remove('selected'));
   aulasSelecionadas.clear();
-  ['tipoEquipamento','quantidade','responsavel','periodo','aula'].forEach(id => {
+  ['tipoEquipamento', 'quantidade', 'responsavel', 'periodo', 'aula'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('hintDisp').textContent = '';
+  document.getElementById('quantidade').removeAttribute('max');
 }
 
 const TOAST_ICONS = {
@@ -591,8 +692,9 @@ function mostrarToast(msg, tipo = 'info') {
   const iconId = TOAST_ICONS[tipo] || TOAST_ICONS.info;
   t.innerHTML = `
     <span class="toast-icon"><svg class="icon"><use href="#${iconId}"/></svg></span>
-    <span class="toast-msg">${msg}</span>
+    <span class="toast-msg"></span>
   `;
+  t.querySelector('.toast-msg').textContent = msg; // textContent: sem risco de injetar HTML
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 4000);
 }
